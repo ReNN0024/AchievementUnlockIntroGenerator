@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Achievement Unlock Intro Generator</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Achievement Unlock Intro Generator</p>
+        <h1>游戏成就跳出卡片 Logo 介绍生成工具</h1>
+        <p class="hero-copy">上传 Logo、填写标题与介绍文案，选择成就卡片风格，即时预览并导出适合印刷与发布的 300dpi PNG 图片。</p>
+      </div>
+      <div class="hero-actions">
+        <button class="primary" id="downloadPng">导出 300dpi PNG</button>
+        <button class="ghost" id="downloadSvg">导出 SVG</button>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel controls" aria-label="编辑设置">
+        <details open>
+          <summary>内容输入</summary>
+          <label>
+            Logo 图片
+            <input type="file" id="logoInput" accept="image/*" />
+          </label>
+          <label>
+            主标题
+            <input type="text" id="mainTitle" value="人类的护道者" maxlength="32" />
+          </label>
+          <label>
+            副标题
+            <input type="text" id="subTitle" value="恭喜获得新成就！" maxlength="36" />
+          </label>
+          <label>
+            介绍文案
+            <textarea id="description" rows="4" maxlength="160">世界需要人类，而人类需要护道者。上传你的 Logo，生成一张带有游戏成就感的介绍卡片。</textarea>
+          </label>
+        </details>
+
+        <details open>
+          <summary>版式与导出</summary>
+          <div class="segmented" id="layoutGroup" role="radiogroup" aria-label="版式">
+            <button data-layout="wide" class="active">横版</button>
+            <button data-layout="square">方图</button>
+            <button data-layout="poster">竖版</button>
+          </div>
+          <label>
+            画布规格
+            <select id="sizePreset">
+              <option value="wide">横版 6×3 inch / 1800×900px</option>
+              <option value="square">方图 4×4 inch / 1200×1200px</option>
+              <option value="poster">竖版 4×6 inch / 1200×1800px</option>
+            </select>
+          </label>
+          <label>
+            缩放预览
+            <input type="range" id="previewZoom" min="45" max="100" value="72" />
+          </label>
+        </details>
+
+        <details open>
+          <summary>风格预设</summary>
+          <div class="preset-grid" id="presetGrid"></div>
+          <label>
+            自定义背景
+            <input type="file" id="backgroundInput" accept="image/*" />
+          </label>
+          <button class="link-button" id="clearBackground">移除自定义背景</button>
+        </details>
+
+        <details open>
+          <summary>元素细调</summary>
+          <div class="two-col">
+            <label>背景色<input type="color" id="bgColor" value="#1b260f" /></label>
+            <label>强调色<input type="color" id="accentColor" value="#b5d65a" /></label>
+            <label>边框色<input type="color" id="borderColor" value="#e9efd2" /></label>
+            <label>文字色<input type="color" id="textColor" value="#f6f7ed" /></label>
+          </div>
+          <label>
+            卡片透明度
+            <input type="range" id="panelOpacity" min="45" max="95" value="72" />
+          </label>
+          <label>
+            装饰强度
+            <input type="range" id="ornamentLevel" min="0" max="100" value="62" />
+          </label>
+          <label>
+            中文字体
+            <select id="fontFamily">
+              <option value="system">系统黑体 / 简洁</option>
+              <option value="song">宋体 / 文雅</option>
+              <option value="kai">楷体 / 叙事</option>
+              <option value="hei">思源黑体优先 / 现代</option>
+            </select>
+          </label>
+          <label>
+            上传自定义字体（可选）
+            <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2,font/*" />
+          </label>
+        </details>
+      </aside>
+
+      <section class="preview-wrap">
+        <div class="preview-toolbar">
+          <div>
+            <strong>所见即所得预览</strong>
+            <span id="dpiInfo">300dpi · 1800×900px</span>
+          </div>
+          <button class="ghost small" id="resetDemo">恢复示例</button>
+        </div>
+        <div class="preview-stage" id="previewStage">
+          <svg id="achievementSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="游戏成就卡片预览"></svg>
+        </div>
+      </section>
+    </section>
+
+    <section class="product-notes">
+      <h2>完善后的产品能力范围</h2>
+      <div class="note-grid">
+        <article><h3>输入完整</h3><p>Logo、主标题、副标题、介绍文案、背景图、中文字体均可替换，覆盖常见成就卡片生产流程。</p></article>
+        <article><h3>可控风格</h3><p>内置暗绿游戏成就、鎏金典藏、霓虹赛博、羊皮幻想四类预设，并支持逐元素改色、透明度和装饰强度调整。</p></article>
+        <article><h3>即时预览</h3><p>所有设置都会实时反映到 SVG 画布，用户不需要导出后再反复试错。</p></article>
+        <article><h3>交付标准</h3><p>按 300dpi 的像素规格导出 PNG，同时保留 SVG 版本，方便二次编辑、印刷或用于视频片头素材。</p></article>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
