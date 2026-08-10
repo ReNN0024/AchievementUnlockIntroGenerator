@@ -11,15 +11,16 @@ const state = {
   layout: "wide",
   width: 1800,
   height: 900,
-  preset: "verdant",
+  preset: "q-ul",
   mainTitle: "人类的护道者",
   subTitle: "恭喜获得新成就！",
   description: "世界需要人类，而人类需要护道者。上传你的 Logo，生成一张带有游戏成就感的介绍卡片。",
   footerText: "UNLOCKED · DESIGN READY · 300DPI",
-  bgColor: "#1b260f",
-  accentColor: "#b5d65a",
-  borderColor: "#e9efd2",
-  textColor: "#f6f7ed",
+  bgColor: "#f8f4ed",
+  accentColor: "#9ac7cd",
+  softColor: "#c1dcda",
+  borderColor: "#b88a3a",
+  textColor: "#453f3a",
   panelOpacity: 72,
   ornamentLevel: 0,
   backgroundOpacity: 34,
@@ -29,43 +30,47 @@ const state = {
 };
 
 const presets = {
-  verdant: {
-    name: "暗绿成就",
-    bgColor: "#1b260f",
-    accentColor: "#b5d65a",
-    borderColor: "#e9efd2",
-    textColor: "#f6f7ed",
+  "q-ul": {
+    name: "荆棘 × 不忘",
+    bgColor: "#f8f4ed",
+    accentColor: "#9ac7cd",
+    softColor: "#c1dcda",
+    borderColor: "#b88a3a",
+    textColor: "#453f3a",
     panelOpacity: 72,
     ornamentLevel: 0,
     backgroundOpacity: 34
   },
-  gold: {
-    name: "鎏金典藏",
-    bgColor: "#efe6d4",
-    accentColor: "#c9932d",
-    borderColor: "#f7d580",
-    textColor: "#5b4936",
-    panelOpacity: 82,
+  "q-ur": {
+    name: "繁花 × 不忘",
+    bgColor: "#f8f4ed",
+    accentColor: "#eacb71",
+    softColor: "#f1dea4",
+    borderColor: "#b88a3a",
+    textColor: "#453f3a",
+    panelOpacity: 72,
     ornamentLevel: 0,
     backgroundOpacity: 34
   },
-  neon: {
-    name: "霓虹赛博",
-    bgColor: "#141327",
-    accentColor: "#ff4fd8",
-    borderColor: "#7af7ff",
-    textColor: "#f9fbff",
-    panelOpacity: 66,
+  "q-ll": {
+    name: "荆棘 × 寻常",
+    bgColor: "#f8f4ed",
+    accentColor: "#b3ca95",
+    softColor: "#d3deba",
+    borderColor: "#b88a3a",
+    textColor: "#453f3a",
+    panelOpacity: 72,
     ornamentLevel: 0,
     backgroundOpacity: 34
   },
-  parchment: {
-    name: "羊皮幻想",
-    bgColor: "#f1eadc",
-    accentColor: "#9f7047",
-    borderColor: "#d9b985",
-    textColor: "#654d37",
-    panelOpacity: 76,
+  "q-lr": {
+    name: "繁花 × 寻常",
+    bgColor: "#f8f4ed",
+    accentColor: "#e19dac",
+    softColor: "#eabec5",
+    borderColor: "#b88a3a",
+    textColor: "#453f3a",
+    panelOpacity: 72,
     ornamentLevel: 0,
     backgroundOpacity: 34
   }
@@ -149,16 +154,16 @@ function buildDefaultLogo() {
 }
 
 function styleBlock() {
-  const panel = rgba(state.bgColor, state.panelOpacity / 100);
+  const panel = rgba("#fffaf1", state.panelOpacity / 100);
   const accentSoft = rgba(state.accentColor, 0.22);
-  const borderSoft = rgba(state.borderColor, 0.45);
+  const borderSoft = rgba(state.borderColor, 0.42);
   return `
     <style>
       .font-main { font-family: ${fontStack()}; }
-      .title { font-weight: 900; letter-spacing: .02em; }
-      .subtitle { font-weight: 850; letter-spacing: .08em; }
-      .desc { font-weight: 650; line-height: 1.5; }
-      .tiny { font-weight: 800; letter-spacing: .16em; }
+      .title { font-weight: 600; letter-spacing: .16em; }
+      .subtitle { font-weight: 600; letter-spacing: .18em; }
+      .desc { font-weight: 500; line-height: 1.55; }
+      .tiny { font-weight: 600; letter-spacing: .22em; }
       .panelFill { fill: ${panel}; }
       .accentFill { fill: ${state.accentColor}; }
       .accentStroke { stroke: ${state.accentColor}; }
@@ -174,16 +179,18 @@ function styleBlock() {
 function buildDefs() {
   const bgImage = state.background ? `<image href="${state.background}" x="0" y="0" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" opacity="${state.backgroundOpacity / 100}"/>` : "";
   const ornament = state.ornamentLevel > 0 ? `<rect width="100%" height="100%" fill="url(#ornamentPattern)" opacity="0.92"/>` : "";
+  const softColor = state.softColor || state.accentColor;
   return `
     <defs>
       <linearGradient id="panelGrad" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="${state.bgColor}" stop-opacity="${state.panelOpacity / 100}"/>
-        <stop offset=".5" stop-color="${state.bgColor}" stop-opacity="${Math.max(0.38, state.panelOpacity / 130)}"/>
-        <stop offset="1" stop-color="${state.bgColor}" stop-opacity="${Math.max(0.18, state.panelOpacity / 230)}"/>
+        <stop offset="0" stop-color="#fffaf1" stop-opacity="${state.panelOpacity / 100}"/>
+        <stop offset=".62" stop-color="#fffaf1" stop-opacity="${Math.max(0.44, state.panelOpacity / 140)}"/>
+        <stop offset="1" stop-color="#f8f4ed" stop-opacity="${Math.max(0.32, state.panelOpacity / 180)}"/>
       </linearGradient>
-      <radialGradient id="spot" cx="22%" cy="45%" r="70%">
-        <stop offset="0" stop-color="${state.accentColor}" stop-opacity="0.28"/>
-        <stop offset="1" stop-color="${state.bgColor}" stop-opacity="0"/>
+      <radialGradient id="spot" cx="22%" cy="45%" r="78%">
+        <stop offset="0" stop-color="${state.accentColor}" stop-opacity="0.38"/>
+        <stop offset="0.42" stop-color="${softColor}" stop-opacity="0.22"/>
+        <stop offset="1" stop-color="#f8f4ed" stop-opacity="0"/>
       </radialGradient>
       <pattern id="ornamentPattern" width="360" height="360" patternUnits="userSpaceOnUse">
         <path d="M40 290 C120 160 190 170 260 40 M92 306 C124 244 174 226 238 222 M246 62 C296 100 314 150 308 220" fill="none" stroke="${state.accentColor}" stroke-width="12" opacity="${state.ornamentLevel / 190}" stroke-linecap="round"/>
@@ -194,9 +201,9 @@ function buildDefs() {
       </filter>
       <clipPath id="logoClip"><rect id="logoClipRect" rx="0"/></clipPath>
     </defs>
-    <rect width="100%" height="100%" fill="${state.bgColor}"/>
-    ${bgImage}
+    <rect width="100%" height="100%" fill="#f8f4ed"/>
     <rect width="100%" height="100%" fill="url(#spot)"/>
+    ${bgImage}
     ${ornament}
   `;
 }
@@ -293,6 +300,7 @@ function applyPreset(key) {
   $("accentColor").value = state.accentColor;
   $("borderColor").value = state.borderColor;
   $("textColor").value = state.textColor;
+  if (preset.softColor) state.softColor = preset.softColor;
   $("panelOpacity").value = state.panelOpacity;
   $("ornamentLevel").value = state.ornamentLevel;
   $("backgroundOpacity").value = state.backgroundOpacity;
@@ -435,7 +443,7 @@ function bindEvents() {
     $("logoScale").value = state.logoScale;
     $("fontFamily").value = state.fontFamily;
     $("previewZoom").value = state.zoom;
-    applyPreset("verdant");
+    applyPreset("q-ul");
   });
 }
 
