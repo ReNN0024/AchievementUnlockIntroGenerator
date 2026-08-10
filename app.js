@@ -22,6 +22,7 @@ const state = {
   textColor: "#f6f7ed",
   panelOpacity: 72,
   ornamentLevel: 62,
+  logoScale: 100,
   fontFamily: "system",
   zoom: 72
 };
@@ -198,10 +199,13 @@ function renderWide() {
   const w = state.width;
   const h = state.height;
   const pad = Math.round(w * 0.055);
-  const logo = Math.round(h * 0.5);
+  const logoFrame = Math.round(h * 0.5);
+  const logoImage = Math.round(logoFrame * state.logoScale / 100);
   const x = pad;
-  const y = Math.round((h - logo) / 2);
-  const contentX = x + logo + Math.round(w * 0.065);
+  const y = Math.round((h - logoFrame) / 2);
+  const imageX = x + Math.round((logoFrame - logoImage) / 2);
+  const imageY = y + Math.round((logoFrame - logoImage) / 2);
+  const contentX = x + logoFrame + Math.round(w * 0.065);
   const contentW = w - contentX - pad;
   const descLines = wrapText(state.description, 26, 4);
   const panelH = Math.round(h * 0.62);
@@ -213,10 +217,10 @@ function renderWide() {
     <rect x="${pad * 0.45}" y="${panelY}" width="${w - pad * 0.9}" height="${panelH}" rx="20" fill="url(#panelGrad)" filter="url(#softShadow)"/>
     <path d="M${pad * 0.45} ${panelY + panelH} H${w - pad * 0.45}" stroke="#000" stroke-opacity="0.14" stroke-width="2"/>
     <g class="glow">
-      <rect x="${x - 18}" y="${y - 18}" width="${logo + 36}" height="${logo + 36}" fill="none" class="borderStroke" stroke-width="8"/>
-      <rect x="${x}" y="${y}" width="${logo}" height="${logo}" fill="${rgba(state.bgColor, 0.35)}" class="borderStroke" stroke-width="4"/>
-      <image href="${logoSrc}" x="${x + 10}" y="${y + 10}" width="${logo - 20}" height="${logo - 20}" preserveAspectRatio="xMidYMid meet"/>
-      <path d="M${x-18} ${y+42} V${y-18} H${x+42} M${x+logo-42} ${y-18} H${x+logo+18} V${y+42} M${x+logo+18} ${y+logo-42} V${y+logo+18} H${x+logo-42} M${x+42} ${y+logo+18} H${x-18} V${y+logo-42}" fill="none" class="accentStroke" stroke-width="7"/>
+      <rect x="${x - 18}" y="${y - 18}" width="${logoFrame + 36}" height="${logoFrame + 36}" fill="none" class="borderStroke" stroke-width="8"/>
+      <rect x="${x}" y="${y}" width="${logoFrame}" height="${logoFrame}" fill="${rgba(state.bgColor, 0.35)}" class="borderStroke" stroke-width="4"/>
+      <image href="${logoSrc}" x="${imageX}" y="${imageY}" width="${logoImage}" height="${logoImage}" preserveAspectRatio="xMidYMid meet"/>
+      <path d="M${x-18} ${y+42} V${y-18} H${x+42} M${x+logoFrame-42} ${y-18} H${x+logoFrame+18} V${y+42} M${x+logoFrame+18} ${y+logoFrame-42} V${y+logoFrame+18} H${x+logoFrame-42} M${x+42} ${y+logoFrame+18} H${x-18} V${y+logoFrame-42}" fill="none" class="accentStroke" stroke-width="7"/>
     </g>
     <g class="font-main textFill">
       <text x="${contentX}" y="${panelY + 98}" class="subtitle" font-size="38">${escapeXml(state.subTitle)}</text>
@@ -234,10 +238,13 @@ function renderSquareOrPoster() {
   const w = state.width;
   const h = state.height;
   const pad = Math.round(w * 0.075);
-  const logo = state.layout === "square" ? 430 : 420;
-  const logoX = Math.round((w - logo) / 2);
+  const logoFrame = state.layout === "square" ? 430 : 420;
+  const logoImage = Math.round(logoFrame * state.logoScale / 100);
+  const logoX = Math.round((w - logoFrame) / 2);
+  const imageX = Math.round((w - logoImage) / 2);
   const top = pad + 80;
-  const titleY = top + logo + 140;
+  const imageY = top + Math.round((logoFrame - logoImage) / 2);
+  const titleY = top + logoFrame + 140;
   const descY = titleY + 190;
   const descLines = wrapText(state.description, state.layout === "square" ? 20 : 18, state.layout === "square" ? 5 : 7);
   const logoSrc = state.logo || buildDefaultLogo();
@@ -247,8 +254,8 @@ function renderSquareOrPoster() {
     <rect x="${pad}" y="${pad}" width="${w - pad * 2}" height="${h - pad * 2}" rx="36" fill="${rgba(state.bgColor, state.panelOpacity / 100)}" class="borderStroke" stroke-width="8" filter="url(#softShadow)"/>
     <path d="M${pad + 42} ${pad} H${w - pad - 42} M${pad + 42} ${h-pad} H${w-pad-42} M${pad} ${pad+42} V${h-pad-42} M${w-pad} ${pad+42} V${h-pad-42}" class="accentStroke" stroke-width="6" opacity=".82"/>
     <g class="glow">
-      <rect x="${logoX - 22}" y="${top - 22}" width="${logo + 44}" height="${logo + 44}" fill="none" class="borderStroke" stroke-width="7"/>
-      <image href="${logoSrc}" x="${logoX}" y="${top}" width="${logo}" height="${logo}" preserveAspectRatio="xMidYMid meet"/>
+      <rect x="${logoX - 22}" y="${top - 22}" width="${logoFrame + 44}" height="${logoFrame + 44}" fill="none" class="borderStroke" stroke-width="7"/>
+      <image href="${logoSrc}" x="${imageX}" y="${imageY}" width="${logoImage}" height="${logoImage}" preserveAspectRatio="xMidYMid meet"/>
     </g>
     <g class="font-main textFill" text-anchor="middle">
       <text x="${w/2}" y="${titleY}" class="subtitle" font-size="40">${escapeXml(state.subTitle)}</text>
@@ -362,7 +369,7 @@ function bindEvents() {
       renderSvg();
     });
   });
-  ["panelOpacity", "ornamentLevel", "previewZoom"].forEach((id) => {
+  ["panelOpacity", "ornamentLevel", "logoScale", "previewZoom"].forEach((id) => {
     $(id).addEventListener("input", (event) => {
       const key = id === "previewZoom" ? "zoom" : id;
       state[key] = Number(event.target.value);
@@ -406,6 +413,7 @@ function bindEvents() {
       subTitle: "恭喜获得新成就！",
       description: "世界需要人类，而人类需要护道者。上传你的 Logo，生成一张带有游戏成就感的介绍卡片。",
       footerText: "UNLOCKED · DESIGN READY · 300DPI",
+      logoScale: 100,
       fontFamily: "system",
       zoom: 72
     });
@@ -413,6 +421,7 @@ function bindEvents() {
     $("subTitle").value = state.subTitle;
     $("description").value = state.description;
     $("footerText").value = state.footerText;
+    $("logoScale").value = state.logoScale;
     $("fontFamily").value = state.fontFamily;
     $("previewZoom").value = state.zoom;
     applyPreset("verdant");
