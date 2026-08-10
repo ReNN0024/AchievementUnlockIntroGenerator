@@ -21,7 +21,8 @@ const state = {
   borderColor: "#e9efd2",
   textColor: "#f6f7ed",
   panelOpacity: 72,
-  ornamentLevel: 62,
+  ornamentLevel: 0,
+  backgroundOpacity: 34,
   logoScale: 100,
   fontFamily: "system",
   zoom: 72
@@ -35,7 +36,8 @@ const presets = {
     borderColor: "#e9efd2",
     textColor: "#f6f7ed",
     panelOpacity: 72,
-    ornamentLevel: 62
+    ornamentLevel: 0,
+    backgroundOpacity: 34
   },
   gold: {
     name: "鎏金典藏",
@@ -44,7 +46,8 @@ const presets = {
     borderColor: "#f7d580",
     textColor: "#5b4936",
     panelOpacity: 82,
-    ornamentLevel: 76
+    ornamentLevel: 0,
+    backgroundOpacity: 34
   },
   neon: {
     name: "霓虹赛博",
@@ -53,7 +56,8 @@ const presets = {
     borderColor: "#7af7ff",
     textColor: "#f9fbff",
     panelOpacity: 66,
-    ornamentLevel: 88
+    ornamentLevel: 0,
+    backgroundOpacity: 34
   },
   parchment: {
     name: "羊皮幻想",
@@ -62,7 +66,8 @@ const presets = {
     borderColor: "#d9b985",
     textColor: "#654d37",
     panelOpacity: 76,
-    ornamentLevel: 58
+    ornamentLevel: 0,
+    backgroundOpacity: 34
   }
 };
 
@@ -167,7 +172,8 @@ function styleBlock() {
 }
 
 function buildDefs() {
-  const bgImage = state.background ? `<image href="${state.background}" x="0" y="0" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" opacity="0.34"/>` : "";
+  const bgImage = state.background ? `<image href="${state.background}" x="0" y="0" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" opacity="${state.backgroundOpacity / 100}"/>` : "";
+  const ornament = state.ornamentLevel > 0 ? `<rect width="100%" height="100%" fill="url(#ornamentPattern)" opacity="0.92"/>` : "";
   return `
     <defs>
       <linearGradient id="panelGrad" x1="0" y1="0" x2="1" y2="0">
@@ -191,7 +197,7 @@ function buildDefs() {
     <rect width="100%" height="100%" fill="${state.bgColor}"/>
     ${bgImage}
     <rect width="100%" height="100%" fill="url(#spot)"/>
-    <rect width="100%" height="100%" fill="url(#ornamentPattern)" opacity="0.92"/>
+    ${ornament}
   `;
 }
 
@@ -289,6 +295,7 @@ function applyPreset(key) {
   $("textColor").value = state.textColor;
   $("panelOpacity").value = state.panelOpacity;
   $("ornamentLevel").value = state.ornamentLevel;
+  $("backgroundOpacity").value = state.backgroundOpacity;
   document.querySelectorAll(".preset-card").forEach((card) => card.classList.toggle("active", card.dataset.preset === key));
   renderSvg();
 }
@@ -369,7 +376,7 @@ function bindEvents() {
       renderSvg();
     });
   });
-  ["panelOpacity", "ornamentLevel", "logoScale", "previewZoom"].forEach((id) => {
+  ["panelOpacity", "ornamentLevel", "backgroundOpacity", "logoScale", "previewZoom"].forEach((id) => {
     $(id).addEventListener("input", (event) => {
       const key = id === "previewZoom" ? "zoom" : id;
       state[key] = Number(event.target.value);
@@ -413,6 +420,8 @@ function bindEvents() {
       subTitle: "恭喜获得新成就！",
       description: "世界需要人类，而人类需要护道者。上传你的 Logo，生成一张带有游戏成就感的介绍卡片。",
       footerText: "UNLOCKED · DESIGN READY · 300DPI",
+      ornamentLevel: 0,
+      backgroundOpacity: 34,
       logoScale: 100,
       fontFamily: "system",
       zoom: 72
@@ -421,6 +430,8 @@ function bindEvents() {
     $("subTitle").value = state.subTitle;
     $("description").value = state.description;
     $("footerText").value = state.footerText;
+    $("ornamentLevel").value = state.ornamentLevel;
+    $("backgroundOpacity").value = state.backgroundOpacity;
     $("logoScale").value = state.logoScale;
     $("fontFamily").value = state.fontFamily;
     $("previewZoom").value = state.zoom;

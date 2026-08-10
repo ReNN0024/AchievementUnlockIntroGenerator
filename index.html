@@ -71,10 +71,14 @@
           <summary>风格预设</summary>
           <div class="preset-grid" id="presetGrid"></div>
           <label>
-            自定义背景
+            自定义底纹 / 背景
             <input type="file" id="backgroundInput" accept="image/*" />
           </label>
-          <button class="link-button" id="clearBackground">移除自定义背景</button>
+          <label>
+            底纹透明度
+            <input type="range" id="backgroundOpacity" min="0" max="100" value="34" />
+          </label>
+          <button class="link-button" id="clearBackground">移除自定义底纹</button>
         </details>
 
         <details open>
@@ -90,8 +94,8 @@
             <input type="range" id="panelOpacity" min="45" max="95" value="72" />
           </label>
           <label>
-            装饰强度
-            <input type="range" id="ornamentLevel" min="0" max="100" value="62" />
+            默认装饰强度（默认关闭）
+            <input type="range" id="ornamentLevel" min="0" max="100" value="0" />
           </label>
           <label>
             Logo 缩放
