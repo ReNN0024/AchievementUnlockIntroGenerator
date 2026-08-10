@@ -15,6 +15,7 @@ const state = {
   mainTitle: "人类的护道者",
   subTitle: "恭喜获得新成就！",
   description: "世界需要人类，而人类需要护道者。上传你的 Logo，生成一张带有游戏成就感的介绍卡片。",
+  footerText: "UNLOCKED · DESIGN READY · 300DPI",
   bgColor: "#1b260f",
   accentColor: "#b5d65a",
   borderColor: "#e9efd2",
@@ -206,6 +207,7 @@ function renderWide() {
   const panelH = Math.round(h * 0.62);
   const panelY = Math.round((h - panelH) / 2);
   const logoSrc = state.logo || buildDefaultLogo();
+  const footer = state.footerText.trim();
 
   return `
     <rect x="${pad * 0.45}" y="${panelY}" width="${w - pad * 0.9}" height="${panelH}" rx="20" fill="url(#panelGrad)" filter="url(#softShadow)"/>
@@ -223,7 +225,7 @@ function renderWide() {
       <text x="${contentX}" y="${panelY + 362}" class="desc mutedFill" font-size="42">
         ${descLines.map((line, i) => `<tspan x="${contentX}" dy="${i === 0 ? 0 : 62}">${escapeXml(line)}</tspan>`).join("")}
       </text>
-      <text x="${contentX}" y="${panelY + panelH - 58}" class="tiny accentFill" font-size="24">UNLOCKED · DESIGN READY · 300DPI</text>
+      ${footer ? `<text x="${contentX}" y="${panelY + panelH - 58}" class="tiny accentFill" font-size="24">${escapeXml(footer)}</text>` : ""}
     </g>
   `;
 }
@@ -239,6 +241,7 @@ function renderSquareOrPoster() {
   const descY = titleY + 190;
   const descLines = wrapText(state.description, state.layout === "square" ? 20 : 18, state.layout === "square" ? 5 : 7);
   const logoSrc = state.logo || buildDefaultLogo();
+  const footer = state.footerText.trim();
 
   return `
     <rect x="${pad}" y="${pad}" width="${w - pad * 2}" height="${h - pad * 2}" rx="36" fill="${rgba(state.bgColor, state.panelOpacity / 100)}" class="borderStroke" stroke-width="8" filter="url(#softShadow)"/>
@@ -254,7 +257,7 @@ function renderSquareOrPoster() {
       <text x="${w/2}" y="${descY}" class="desc mutedFill" font-size="42">
         ${descLines.map((line, i) => `<tspan x="${w/2}" dy="${i === 0 ? 0 : 64}">${escapeXml(line)}</tspan>`).join("")}
       </text>
-      <text x="${w/2}" y="${h - pad - 78}" class="tiny accentFill" font-size="24">ACHIEVEMENT INTRO CARD · 300DPI</text>
+      ${footer ? `<text x="${w/2}" y="${h - pad - 78}" class="tiny accentFill" font-size="24">${escapeXml(footer)}</text>` : ""}
     </g>
   `;
 }
@@ -347,7 +350,7 @@ function buildPresetGrid() {
 }
 
 function bindEvents() {
-  ["mainTitle", "subTitle", "description"].forEach((id) => {
+  ["mainTitle", "subTitle", "description", "footerText"].forEach((id) => {
     $(id).addEventListener("input", (event) => {
       state[id] = event.target.value;
       renderSvg();
@@ -402,12 +405,14 @@ function bindEvents() {
       mainTitle: "人类的护道者",
       subTitle: "恭喜获得新成就！",
       description: "世界需要人类，而人类需要护道者。上传你的 Logo，生成一张带有游戏成就感的介绍卡片。",
+      footerText: "UNLOCKED · DESIGN READY · 300DPI",
       fontFamily: "system",
       zoom: 72
     });
     $("mainTitle").value = state.mainTitle;
     $("subTitle").value = state.subTitle;
     $("description").value = state.description;
+    $("footerText").value = state.footerText;
     $("fontFamily").value = state.fontFamily;
     $("previewZoom").value = state.zoom;
     applyPreset("verdant");
