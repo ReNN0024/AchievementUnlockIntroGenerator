@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#F5F5F7" />
   <title>Achievement Unlock Intro Generator</title>
   <link rel="stylesheet" href="./styles.css" />
@@ -22,12 +22,12 @@
     </header>
 
     <div class="mobile-tabs" role="tablist" aria-label="工作区切换">
-      <button type="button" class="active" data-mobile-tab="editor" role="tab" aria-selected="true">编辑</button>
-      <button type="button" data-mobile-tab="preview" role="tab" aria-selected="false">预览</button>
+      <button type="button" class="active" data-mobile-tab="editor" role="tab" aria-selected="true" aria-controls="editorPanel">编辑</button>
+      <button type="button" data-mobile-tab="preview" role="tab" aria-selected="false" aria-controls="previewPanel">预览</button>
     </div>
 
     <section class="workspace">
-      <aside class="panel controls" id="editorPanel" aria-label="编辑器设置">
+      <aside class="panel controls" id="editorPanel" role="tabpanel" aria-label="编辑器设置">
         <details open>
           <summary>内容</summary>
           <div class="settings-stack">
@@ -36,8 +36,29 @@
             <label>副标题<input type="text" id="subTitle" value="成就解锁" maxlength="64" /></label>
             <label>介绍文案<textarea id="description" rows="5" maxlength="500">它们毫无意义</textarea></label>
             <p class="field-message" id="descriptionWarning" role="status"></p>
-            <label>字体
-              <select id="fontFamily">
+            <div class="two-col">
+              <label>标题字体
+                <select id="titleFontFamily">
+                  <option value="follow">跟随正文</option>
+                  <option value="system">系统黑体</option>
+                  <option value="song">宋体</option>
+                  <option value="kai">楷体</option>
+                  <option value="hei">现代黑体</option>
+                  <option value="custom">自定义字体</option>
+                </select>
+              </label>
+              <label>正文字体
+                <select id="bodyFontFamily">
+                  <option value="system">系统黑体</option>
+                  <option value="song">宋体</option>
+                  <option value="kai">楷体</option>
+                  <option value="hei">现代黑体</option>
+                  <option value="custom">自定义字体</option>
+                </select>
+              </label>
+            </div>
+            <label class="legacy-font-field">字体
+              <select id="fontFamily" aria-label="旧版字体选择，已同步到标题和正文">
                 <option value="system">系统黑体 / 简洁</option>
                 <option value="song">宋体 / 文雅</option>
                 <option value="kai">楷体 / 叙事</option>
@@ -48,6 +69,21 @@
               <label class="compact-label">自定义字体<input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2,font/*" /></label>
               <span class="file-status" id="fontStatus">未上传</span>
             </div>
+            <div class="two-col">
+              <label>自定义字体应用范围
+                <select id="customFontScope">
+                  <option value="title">仅主标题</option>
+                  <option value="title-desc">主标题与正文</option>
+                  <option value="all">全部文字</option>
+                </select>
+              </label>
+              <label>副标题标记
+                <select id="showSubtitleMarker">
+                  <option value="true">显示</option>
+                  <option value="false">隐藏</option>
+                </select>
+              </label>
+            </div>
           </div>
         </details>
 
@@ -55,7 +91,7 @@
           <summary>底图</summary>
           <div class="settings-stack">
             <section class="upload-card" id="backgroundUploadCard" tabindex="0" role="button" aria-label="上传底图，可点击、拖拽或粘贴图片">
-              <input type="file" id="backgroundInput" accept="image/png,image/jpeg,image/webp" hidden />
+              <input type="file" id="backgroundInput" accept="image/*" hidden />
               <div class="upload-preview" id="backgroundThumb" aria-hidden="true"></div>
               <div class="upload-copy"><strong id="backgroundUploadTitle">上传底图</strong><span id="backgroundFileName">PNG、JPEG、WebP，最大 20MB</span></div>
               <span class="upload-action">选择文件</span>
@@ -71,7 +107,7 @@
           <summary>Logo</summary>
           <div class="settings-stack">
             <section class="upload-card" id="logoUploadCard" tabindex="0" role="button" aria-label="上传 Logo，可点击、拖拽或粘贴图片">
-              <input type="file" id="logoInput" accept="image/png,image/jpeg,image/webp" hidden />
+              <input type="file" id="logoInput" accept="image/*" hidden />
               <div class="upload-preview logo" id="logoThumb" aria-hidden="true"></div>
               <div class="upload-copy"><strong id="logoUploadTitle">上传 Logo</strong><span id="logoFileName">PNG、JPEG、WebP，最大 20MB</span></div>
               <span class="upload-action">选择文件</span>
@@ -118,7 +154,7 @@
         </div>
       </aside>
 
-      <section class="preview-wrap" id="previewPanel">
+      <section class="preview-wrap" id="previewPanel" role="tabpanel">
         <header class="preview-toolbar">
           <div class="preview-title"><strong>作品预览</strong><span id="dpiInfo">1932×1360 高清 PNG</span></div>
           <div class="preview-actions">
@@ -142,8 +178,19 @@
 
   <nav class="mobile-bottom-bar" aria-label="移动端快捷操作">
     <button class="button secondary" id="mobilePreview" type="button">查看预览</button>
-    <button class="button primary" id="mobileExport" type="button">导出 PNG</button>
+    <button class="button primary" id="mobileExport" type="button">导出</button>
   </nav>
+  <div class="export-sheet" id="exportSheet" role="dialog" aria-modal="true" aria-labelledby="exportSheetTitle" hidden>
+    <button class="sheet-scrim" id="exportSheetScrim" type="button" aria-label="关闭导出面板"></button>
+    <div class="sheet-panel">
+      <h2 id="exportSheetTitle">导出作品</h2>
+      <button class="sheet-action" id="sheetExportPng" type="button">导出 PNG</button>
+      <button class="sheet-action" id="sheetExportSvg" type="button">导出 SVG</button>
+      <button class="sheet-action" id="sheetShare" type="button" disabled>保存或分享</button>
+      <button class="sheet-action cancel" id="sheetCancel" type="button">取消</button>
+      <p class="sheet-note" id="sheetNote" role="status"></p>
+    </div>
+  </div>
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
   <script src="./app.js"></script>
 </body>
