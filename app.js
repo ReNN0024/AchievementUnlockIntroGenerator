@@ -23,10 +23,13 @@ const DEFAULTS = {
   logoScale: 120,
   logoX: 0,
   logoY: 0,
-  subtitleTitleGap: 104,
-  titleRuleGap: 126,
-  ruleDescGap: 88,
-  descLineGap: 68,
+  subtitleTitleGap: 126,
+  titleRuleGap: 156,
+  ruleDescGap: 106,
+  descLineGap: 76,
+  subtitleLetterSpacing: 8,
+  titleLetterSpacing: 4,
+  descLetterSpacing: 1,
   descriptionBoxWidth: 930,
   descriptionBoxHeight: 210,
   fontFamily: "system",
@@ -46,6 +49,7 @@ const rangeIds = [
   "logoScale", "logoX", "logoY",
   "glassDepth", "glassDispersion", "cardOpacity",
   "subtitleTitleGap", "titleRuleGap", "ruleDescGap", "descLineGap",
+  "subtitleLetterSpacing", "titleLetterSpacing", "descLetterSpacing",
   "descriptionBoxWidth", "descriptionBoxHeight", "previewZoom"
 ];
 
@@ -226,9 +230,9 @@ function styleBlock() {
   return `
     <style>
       .font-main { font-family: ${fontStack()}; }
-      .subtitle { font-weight: 850; letter-spacing: .14em; }
-      .title { font-weight: 900; letter-spacing: .04em; }
-      .desc { font-weight: 650; line-height: 1.48; }
+      .subtitle { font-weight: 850; letter-spacing: ${state.subtitleLetterSpacing}px; }
+      .title { font-weight: 900; letter-spacing: ${state.titleLetterSpacing}px; }
+      .desc { font-weight: 650; letter-spacing: ${state.descLetterSpacing}px; line-height: 1.48; }
       .textFill { fill: ${state.textColor}; }
       .mutedFill { fill: ${textSoft}; }
       .accentStroke { stroke: ${state.accentColor}; }
@@ -597,6 +601,9 @@ function resetAdjustments() {
     titleRuleGap: DEFAULTS.titleRuleGap,
     ruleDescGap: DEFAULTS.ruleDescGap,
     descLineGap: DEFAULTS.descLineGap,
+    subtitleLetterSpacing: DEFAULTS.subtitleLetterSpacing,
+    titleLetterSpacing: DEFAULTS.titleLetterSpacing,
+    descLetterSpacing: DEFAULTS.descLetterSpacing,
     descriptionBoxWidth: DEFAULTS.descriptionBoxWidth,
     descriptionBoxHeight: DEFAULTS.descriptionBoxHeight,
     fontFamily: DEFAULTS.fontFamily,
