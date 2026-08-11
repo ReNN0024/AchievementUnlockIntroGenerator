@@ -1114,11 +1114,20 @@ function init(){setupRanges();setupUpload("background");setupUpload("logo");setu
     syncUi();scheduleRender();recordHistory();
   });
 }
-/* Layout introspection hook used by the automated layout regression tests.
-   Read-only: exposes the geometry/measurement functions so the two-phase
-   centring maths can be asserted without scraping rendered pixels. */
-window.__state = state;
-window.__debug = { layoutGeometry, systemTextPlan, currentTypography, logoContentGeometry, layoutSystemTypography, measureText, glyphMetrics, fontStackForRole, computeSystemAutoLayout, activeLogoCrop, loadDemoPreset, chooseSmartMaterial, analyzeBackground, analyzeLogoColors, describeAccent };
-window.__pngFallback = drawCompatiblePng;
-window.__cropBench = () => computeLogoCropBounds(state.logo);
+/* Layout introspection hook for the automated layout regression tests.
+   Read-only, and only mounted for local development or when ?debug=layout is
+   present, so production visitors never get the internal editor state. */
+function layoutDebugEnabled() {
+  try {
+    const host = location.hostname;
+    const local = host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "" || location.protocol === "file:";
+    return local || new URLSearchParams(location.search).get("debug") === "layout";
+  } catch (_) { return false; }
+}
+if (layoutDebugEnabled()) {
+  window.__state = state;
+  window.__debug = { layoutGeometry, systemTextPlan, currentTypography, logoContentGeometry, layoutSystemTypography, measureText, glyphMetrics, fontStackForRole, computeSystemAutoLayout, activeLogoCrop, loadDemoPreset, chooseSmartMaterial, analyzeBackground, analyzeLogoColors, describeAccent };
+  window.__pngFallback = drawCompatiblePng;
+  window.__cropBench = () => computeLogoCropBounds(state.logo);
+}
 try { init(); } catch (err) { console.error(err); showToast("页面初始化失败，请刷新或更换浏览器重试。", "error", true); }
