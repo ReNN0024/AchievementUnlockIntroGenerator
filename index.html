@@ -132,6 +132,7 @@
               <label>强调色<input type="color" id="accentColor" value="#F5F7FF" /></label>
               <label>文字色<input type="color" id="textColor" value="#FFFFFF" /></label>
             </div>
+            <label>玻璃 tint<input type="color" id="glassTintColor" value="#FFFFFF" /></label>
             <div class="theme-block">
               <div class="mini-heading">推荐配色</div>
               <div class="theme-palette" id="themePalette"></div>
@@ -144,6 +145,36 @@
           <div class="settings-stack">
             <div class="preset-head"><span>版式预设</span></div>
             <div class="layout-presets" id="layoutPresets" aria-label="版式预设"></div>
+            <div class="two-col">
+              <label>卡片高度
+                <select id="cardHeightMode">
+                  <option value="auto">自动</option>
+                  <option value="fixed">固定</option>
+                </select>
+              </label>
+              <label>分割线
+                <select id="dividerMode">
+                  <option value="auto">自动</option>
+                  <option value="show">显示</option>
+                  <option value="hide">隐藏</option>
+                </select>
+              </label>
+            </div>
+            <div class="two-col">
+              <label>卡片位置
+                <select id="cardPositionMode">
+                  <option value="auto">自动居中</option>
+                  <option value="custom">自定义</option>
+                </select>
+              </label>
+              <label>排版密度
+                <select id="layoutDensityMode">
+                  <option value="auto">自动</option>
+                  <option value="custom">自定义</option>
+                </select>
+              </label>
+            </div>
+            <div class="quick-actions" data-asset="card"><button type="button" data-action="center">卡片居中</button><button type="button" data-action="smart">智能位置</button><button type="button" data-action="auto">自动排版</button><button type="button" data-action="fixed">固定高度</button></div>
             <div id="typeRangeControls"></div>
           </div>
         </details>
