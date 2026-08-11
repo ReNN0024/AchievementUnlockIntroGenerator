@@ -6,6 +6,33 @@ const LEGACY_STORAGE_KEYS = ["achievement-unlock-editor-v4", "achievement-unlock
 const DB_NAME = "achievement-unlock-assets";
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const MAX_WORK_IMAGE_EDGE = 4096;
+const LAYOUT_STATE_VERSION = 2;
+const ALPHA_SCAN_EDGE = 256;
+const ALPHA_MIN = 16;
+const LOGO_CROP_PADDING = .065;
+const LOGO_OFFSET_RANGE = { x: 300, y: 190 };
+
+const DEMO_PRESETS = {
+  mingye: {
+    id: "mingye",
+    label: "暝夜",
+    background: "./assets/demo/mingye-background.jpg",
+    logo: "./assets/demo/mingye-logo.png",
+    content: { subTitle: "成就解锁", mainTitle: "雕像也无法让她回心转意", description: "它们毫无意义" },
+    state: {
+      layoutPreset: "system", materialBase: "obsidian", glassPreset: "obsidian",
+      cardHeightMode: "auto", cardPositionMode: "auto", dividerMode: "auto", layoutDensityMode: "auto",
+      logoStyle: "floating", logoCropMode: "auto", showSubtitleMarker: true,
+      textColor: "#FFFFFF", primaryAccent: "#EAC77F", accentColor: "#EAC77F", secondaryAccent: "#961F18",
+      glassTintColor: "#0B1018", glassTintOpacity: .32, glassSaturation: .78, glassContrast: 1.03, glassDispersion: 0,
+      glassDepth: 58, cardOpacity: 60,
+      backgroundScale: 100, backgroundX: 0, backgroundY: 0, backgroundOpacity: 100,
+      logoScale: 100, logoX: 0, logoY: 0, logoOpticalOffsetY: 0,
+      subtitleOpacity: .88, titleOpacity: .96, descOpacity: .80, titleShadowOpacity: .12, descShadowOpacity: .10,
+      titleFontFamily: "system", bodyFontFamily: "system", typographyManuallyEdited: false
+    }
+  }
+};
 
 const FONT_STACKS = {
   system: "Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'PingFang SC', 'Segoe UI', 'Microsoft YaHei', sans-serif",
@@ -17,10 +44,10 @@ const FONT_KEYS = new Set(["follow", "system", "song", "kai", "hei", "custom"]);
 
 const TYPOGRAPHY_PRESETS = {
   system: {
-    subtitle: { fontSize: 29, fontWeight: 600, letterSpacing: 4, opacity: .82, color: "accent", shadowOpacity: 0, shadowBlur: 0, shadowOffsetY: 0, lineHeight: 1 },
-    title: { fontSize: 76, minFontSize: 54, fontWeight: 600, letterSpacing: -.5, opacity: .96, color: "text", shadowColor: "#000000", shadowOpacity: .14, shadowBlur: 1.35, shadowOffsetY: 1, lineHeight: 1.08 },
-    description: { fontSize: 32, fontWeight: 400, letterSpacing: 0, opacity: .70, color: "text", shadowColor: "#000000", shadowOpacity: .11, shadowBlur: 1, shadowOffsetY: 1, lineHeight: 54 },
-    divider: { width: 320, opacity: .24 }
+    subtitle: { fontSize: 29, fontWeight: 600, letterSpacing: 4, opacity: .88, color: "accent", shadowOpacity: 0, shadowBlur: 0, shadowOffsetY: 0, lineHeight: 1 },
+    title: { fontSize: 76, minFontSize: 54, fontWeight: 600, letterSpacing: -.5, opacity: .96, color: "text", shadowColor: "#000000", shadowOpacity: .12, shadowBlur: 1.35, shadowOffsetY: 1, lineHeight: 1.08 },
+    description: { fontSize: 34, fontWeight: 400, letterSpacing: 0, opacity: .80, color: "text", shadowColor: "#000000", shadowOpacity: .10, shadowBlur: 1, shadowOffsetY: 1, lineHeight: 54 },
+    divider: { width: 260, opacity: .28 }
   },
   certificate: {
     subtitle: { fontSize: 26, fontWeight: 600, letterSpacing: 8, opacity: .70, color: "accent", shadowOpacity: 0, shadowBlur: 0, shadowOffsetY: 0, lineHeight: 1 },
@@ -45,56 +72,63 @@ const LAYOUT_PRESETS = { system: { id: "system", label: "系统通知" }, certif
 const SMART_THRESHOLDS = {
   veryBright: .70, dark: .28, lowSaturation: .24, highSaturation: .46, complexStd: .20,
   warmHueMin: 18, warmHueMax: 62, cyanHueMin: 165, cyanHueMax: 205, purpleHueMin: 245, purpleHueMax: 292,
-  warmDominance: .46, coldDominance: .42, textureComplexity: .18, accentContrast: 3,
-  minAccentChroma: .045, maxAccentChroma: .18, minAccentLum: .48, maxAccentLum: .86
+  warmDominance: .28, coldDominance: .42, textureComplexity: .18, accentContrast: 3,
+  minAccentChroma: .045, maxAccentChroma: .18, minAccentLum: .48, maxAccentLum: .86,
+  warmSaturation: .30, warmHighlightStd: .12
 };
 const AUTO_LAYOUT = {
   system: {
-    0: { height: 510, radius: 84, titleRuleGap: 0, ruleDescGap: 0, descLineGap: 54, descFontSize: 32, descOpacity: .78, dividerWidth: 0, logoOffset: -26 },
-    1: { height: 570, radius: 84, titleRuleGap: 82, ruleDescGap: 52, descLineGap: 54, descFontSize: 34, descOpacity: .80, dividerWidth: 260, logoOffset: -24 },
-    2: { height: 630, radius: 88, titleRuleGap: 92, ruleDescGap: 60, descLineGap: 54, descFontSize: 32, descOpacity: .76, dividerWidth: 300, logoOffset: -14 },
-    3: { height: 700, radius: 92, titleRuleGap: 100, ruleDescGap: 72, descLineGap: 54, descFontSize: 32, descOpacity: .74, dividerWidth: 320, logoOffset: 0 }
+    0: { height: 510, radius: 84, subtitleTitleVisualGap: 24, titleDividerVisualGap: 0, dividerDescriptionVisualGap: 0, descriptionLineBaselineGap: 54, descFontSize: 34, descOpacity: .80, dividerWidth: 0, logoOffset: 0, textOffset: 0, logoTarget: 236, logoContainerSize: 300 },
+    1: { height: 570, radius: 84, subtitleTitleVisualGap: 24, titleDividerVisualGap: 48, dividerDescriptionVisualGap: 44, descriptionLineBaselineGap: 54, descFontSize: 34, descOpacity: .80, dividerWidth: 260, logoOffset: 0, textOffset: 8, logoTarget: 246, logoContainerSize: 312 },
+    2: { height: 630, radius: 88, subtitleTitleVisualGap: 24, titleDividerVisualGap: 54, dividerDescriptionVisualGap: 50, descriptionLineBaselineGap: 54, descFontSize: 32, descOpacity: .76, dividerWidth: 300, logoOffset: 0, textOffset: 4, logoTarget: 270, logoContainerSize: 340 },
+    3: { height: 700, radius: 92, subtitleTitleVisualGap: 24, titleDividerVisualGap: 60, dividerDescriptionVisualGap: 56, descriptionLineBaselineGap: 54, descFontSize: 32, descOpacity: .76, dividerWidth: 320, logoOffset: 0, textOffset: 0, logoTarget: 290, logoContainerSize: 368 }
   }
 };
 
 const DEFAULTS = {
   width: CANVAS.width, height: CANVAS.height,
+  layoutStateVersion: LAYOUT_STATE_VERSION,
   mainTitle: "雕像也无法让她回心转意", subTitle: "成就解锁", description: "它们毫无意义",
   accentColor: "#F5F7FF", textColor: "#FFFFFF", primaryAccent: "#F5F7FF", secondaryAccent: "", fontFamily: "system", titleFontFamily: "system", bodyFontFamily: "system", customFontScope: "title", showSubtitleMarker: true, typographyManuallyEdited: false,
   backgroundScale: 100, backgroundX: 0, backgroundY: 0, backgroundOpacity: 100,
-  logoScale: 120, logoX: 0, logoY: 0, logoStyle: "floating", logoOpticalOffsetY: 0,
+  logoScale: 100, logoX: 0, logoY: 0, logoStyle: "floating", logoOpticalOffsetY: 0,
+  logoCropMode: "auto", logoCropBounds: null, logoContainerSize: 312,
   glassPreset: "standard", materialBase: "standard", glassDepth: 58, cardOpacity: 22, glassDispersion: 0,
   glassSaturation: 1.07, glassContrast: 1.03, glassTintColor: "#FFFFFF", glassTintOpacity: .12,
-  layoutPreset: "system", smartSummary: "", smartConfidence: "low",
-  subtitleOpacity: .82, titleOpacity: .96, descOpacity: .74, titleShadowOpacity: .14, descShadowOpacity: .11,
+  layoutPreset: "system", smartSummary: "", smartConfidence: "low", demoId: "",
+  subtitleOpacity: .88, titleOpacity: .96, descOpacity: .80, titleShadowOpacity: .12, descShadowOpacity: .10,
   cardHeightMode: "auto", dividerMode: "auto", cardPositionMode: "auto", layoutDensityMode: "auto",
-  cardX: 188, cardY: 330, cardScale: 100, cardHeight: 700,
-  subtitleTitleGap: 92, titleRuleGap: 100, ruleDescGap: 72, descLineGap: 54,
+  cardX: 0, cardY: 0, cardScale: 100, cardHeight: 570,
+  subtitleTitleVisualGap: 24, titleDividerVisualGap: 48, dividerDescriptionVisualGap: 44, descriptionLineBaselineGap: 54,
+  textOpticalOffsetY: 8,
   subtitleLetterSpacing: 4, titleLetterSpacing: -.5, descLetterSpacing: 0,
-  dividerWidth: 320, descriptionBoxWidth: 860, descriptionBoxHeight: 240, zoom: 72
+  dividerWidth: 260, descriptionBoxWidth: 860, descriptionBoxHeight: 240, zoom: 72
 };
 const RANGE_GROUPS = {
   background: ["backgroundScale", "backgroundX", "backgroundY", "backgroundOpacity"],
-  logo: ["logoScale", "logoX", "logoY"],
+  logo: ["logoScale", "logoX", "logoY", "logoOpticalOffsetY", "logoContainerSize"],
   glass: ["glassDepth", "cardOpacity", "glassDispersion", "glassSaturation", "glassContrast", "glassTintOpacity"],
-  type: ["subtitleTitleGap", "titleRuleGap", "ruleDescGap", "descLineGap", "subtitleLetterSpacing", "titleLetterSpacing", "descLetterSpacing", "dividerWidth", "descriptionBoxWidth", "descriptionBoxHeight", "cardHeight", "cardX", "cardY", "cardScale", "logoOpticalOffsetY", "zoom"]
+  type: ["textOpticalOffsetY", "subtitleTitleVisualGap", "titleDividerVisualGap", "dividerDescriptionVisualGap", "descriptionLineBaselineGap", "subtitleLetterSpacing", "titleLetterSpacing", "descLetterSpacing", "dividerWidth", "descriptionBoxWidth", "cardHeight", "cardX", "cardY", "cardScale", "zoom"]
 };
 const RANGE_LABELS = {
   backgroundScale: "底图缩放", backgroundX: "水平位置", backgroundY: "垂直位置", backgroundOpacity: "底图不透明度",
-  logoScale: "Logo 缩放", logoX: "水平位置", logoY: "垂直位置",
+  logoScale: "Logo 缩放", logoX: "水平位置", logoY: "垂直位置", logoOpticalOffsetY: "Logo 光学垂直位置", logoContainerSize: "玻璃容器尺寸",
   glassDepth: "玻璃深度", cardOpacity: "卡片透明度", glassDispersion: "边缘色散", glassSaturation: "玻璃饱和度", glassContrast: "玻璃对比度", glassTintOpacity: "玻璃染色强度",
-  subtitleTitleGap: "副标题到主标题间距", titleRuleGap: "主标题到分割线间距", ruleDescGap: "分割线到正文间距", descLineGap: "正文行距",
+  textOpticalOffsetY: "文字整体垂直位置",
+  subtitleTitleVisualGap: "副标题到主标题（可见距离）", titleDividerVisualGap: "主标题到分割线（可见距离）", dividerDescriptionVisualGap: "分割线到正文（可见距离）", descriptionLineBaselineGap: "正文行距（基线）",
   subtitleLetterSpacing: "副标题字距", titleLetterSpacing: "主标题字距", descLetterSpacing: "正文字距", dividerWidth: "分割线宽度",
-  descriptionBoxWidth: "文案框宽度", descriptionBoxHeight: "文案框高度", cardHeight: "固定卡片高度", cardX: "卡片水平位置", cardY: "卡片垂直位置", cardScale: "卡片缩放", logoOpticalOffsetY: "Logo 光学修正", zoom: "预览缩放"
+  descriptionBoxWidth: "文案框宽度", descriptionBoxHeight: "文案框高度", cardHeight: "固定卡片高度", cardX: "卡片水平位置", cardY: "卡片垂直位置", cardScale: "卡片缩放", zoom: "预览缩放"
 };
 const RANGE_CONFIG = {
   backgroundScale: [100, 240, 1], backgroundX: [-100, 100, 1], backgroundY: [-100, 100, 1], backgroundOpacity: [0, 100, 1],
-  logoScale: [70, 260, 1], logoX: [-100, 100, 1], logoY: [-100, 100, 1],
+  logoScale: [40, 500, 1], logoX: [-100, 100, 1], logoY: [-100, 100, 1], logoOpticalOffsetY: [-80, 80, 1], logoContainerSize: [220, 460, 1],
   glassDepth: [0, 100, 1], cardOpacity: [0, 60, 1], glassDispersion: [0, 20, 1], glassSaturation: [.50, 1.25, .01], glassContrast: [.90, 1.14, .01], glassTintOpacity: [.04, .42, .01],
-  subtitleTitleGap: [56, 230, 1], titleRuleGap: [60, 260, 1], ruleDescGap: [36, 180, 1], descLineGap: [44, 112, 1],
+  textOpticalOffsetY: [-80, 80, 1],
+  subtitleTitleVisualGap: [0, 120, 1], titleDividerVisualGap: [0, 160, 1], dividerDescriptionVisualGap: [0, 140, 1], descriptionLineBaselineGap: [40, 112, 1],
   subtitleLetterSpacing: [0, 10, .5], titleLetterSpacing: [-2, 8, .25], descLetterSpacing: [-.5, 4, .25], dividerWidth: [120, 600, 1],
-  descriptionBoxWidth: [520, 1060, 1], descriptionBoxHeight: [90, 300, 1], cardHeight: [480, 760, 1], cardX: [-160, 160, 1], cardY: [-120, 120, 1], cardScale: [86, 108, 1], logoOpticalOffsetY: [-80, 80, 1], zoom: [42, 100, 1]
+  descriptionBoxWidth: [520, 1060, 1], descriptionBoxHeight: [90, 300, 1], cardHeight: [480, 760, 1], cardX: [-160, 160, 1], cardY: [-120, 120, 1], cardScale: [86, 108, 1], zoom: [42, 100, 1]
 };
+const RANGE_INPUT_MAX = { logoScale: 600 };
 const state = { ...DEFAULTS, background: "", logo: "", customFontName: "", customFontData: "", customFontFormat: "", customFontFileName: "", themes: [], selectedTheme: -1, editorTarget: null };
 let history = [], future = [], renderQueued = false, persistTimer = 0, interactionStart = null, exportBusy = false, smartBusy = false, smartCache = null, suppressSmartManual = false;
 let dbWarningShown = false, storageWarningShown = false, exportCapability = null, lastExportFile = null, lastExportUrl = "", layoutQueued = false;
@@ -145,7 +179,53 @@ function normalizeState() {
   if (!state.dividerMode) state.dividerMode = "auto";
   if (!state.cardPositionMode) state.cardPositionMode = "auto";
   if (!state.layoutDensityMode) state.layoutDensityMode = "auto";
+  if (!["auto", "original", "custom"].includes(state.logoCropMode)) state.logoCropMode = "auto";
+  if (!Number.isFinite(Number(state.logoScale))) state.logoScale = DEFAULTS.logoScale;
+  state.logoScale = clamp(Number(state.logoScale), 40, 600);
+  if (!Number.isFinite(Number(state.logoContainerSize))) state.logoContainerSize = DEFAULTS.logoContainerSize;
+  ["subtitleTitleVisualGap", "titleDividerVisualGap", "dividerDescriptionVisualGap", "descriptionLineBaselineGap", "textOpticalOffsetY"].forEach(k => { if (!Number.isFinite(Number(state[k]))) state[k] = DEFAULTS[k]; });
+  if (state.logoCropBounds && typeof state.logoCropBounds !== "object") state.logoCropBounds = null;
   if (state.fontFamily && (!state.titleFontFamily || !state.bodyFontFamily)) { state.titleFontFamily = state.fontFamily; state.bodyFontFamily = state.fontFamily; }
+}
+/* ---- layoutStateVersion 2 migration ----
+   Converts legacy baseline-difference gaps into the new visible-gap model, keeps
+   text/assets/material/fonts untouched, and never re-runs once stamped. */
+function migrateLayoutState(saved) {
+  if (!saved || Number(saved.layoutStateVersion) >= LAYOUT_STATE_VERSION) { state.layoutStateVersion = LAYOUT_STATE_VERSION; return false; }
+  const auto = AUTO_LAYOUT.system[1];
+  const wasAutoDensity = !saved.layoutDensityMode || saved.layoutDensityMode === "auto";
+  if (wasAutoDensity) {
+    // Auto layout: adopt the new visible-gap defaults outright.
+    state.subtitleTitleVisualGap = DEFAULTS.subtitleTitleVisualGap;
+    state.titleDividerVisualGap = DEFAULTS.titleDividerVisualGap;
+    state.dividerDescriptionVisualGap = DEFAULTS.dividerDescriptionVisualGap;
+    state.descriptionLineBaselineGap = DEFAULTS.descriptionLineBaselineGap;
+    state.textOpticalOffsetY = DEFAULTS.textOpticalOffsetY;
+  } else {
+    // Custom layout: convert baseline deltas into approximate visible distances.
+    const titleSize = Number(saved.titleSize) || TYPOGRAPHY_PRESETS.system.title.fontSize;
+    const subSize = TYPOGRAPHY_PRESETS.system.subtitle.fontSize;
+    const descSize = Number(saved.descFontSize) || TYPOGRAPHY_PRESETS.system.description.fontSize;
+    const toVisible = (baselineGap, upperDescent, lowerAscent, fallback) => {
+      const v = Number(baselineGap);
+      if (!Number.isFinite(v)) return fallback;
+      return clamp(Math.round(v - upperDescent - lowerAscent), 0, 160);
+    };
+    state.subtitleTitleVisualGap = toVisible(saved.subtitleTitleGap, subSize * .22, titleSize * .78, DEFAULTS.subtitleTitleVisualGap);
+    state.titleDividerVisualGap = toVisible(saved.titleRuleGap, 0, 0, DEFAULTS.titleDividerVisualGap);
+    state.dividerDescriptionVisualGap = toVisible(saved.ruleDescGap, 0, 0, DEFAULTS.dividerDescriptionVisualGap);
+    state.descriptionLineBaselineGap = Number.isFinite(Number(saved.descLineGap)) ? clamp(Number(saved.descLineGap), 40, 112) : DEFAULTS.descriptionLineBaselineGap;
+    state.textOpticalOffsetY = 0;
+  }
+  // Legacy fixed offsets are intentionally dropped; nothing reads subtitleY anymore.
+  ["subtitleTitleGap", "titleRuleGap", "ruleDescGap", "descLineGap", "subtitleY"].forEach(k => { delete state[k]; });
+  // Preserve the previous visual logo size: legacy scale was relative to the raw
+  // PNG canvas, so keep the number and do NOT re-fit to the new crop.
+  if (Number.isFinite(Number(saved.logoScale))) state.logoScale = clamp(Number(saved.logoScale), 40, 600);
+  if (!saved.logoCropMode) state.logoCropMode = "auto";
+  if (saved.cardPositionMode !== "custom") { state.cardX = 0; state.cardY = 0; }
+  state.layoutStateVersion = LAYOUT_STATE_VERSION;
+  return true;
 }
 function snapshot() { const copy = {}; Object.keys(DEFAULTS).forEach(k => copy[k] = state[k]); ["customFontName", "customFontFormat", "customFontFileName", "selectedTheme", "editorTarget"].forEach(k => copy[k] = state[k]); return copy; }
 function restoreSnapshot(data) { Object.assign(state, data); normalizeState(); state.themes = state.background ? state.themes : []; syncUi(); scheduleRender(); }
@@ -156,12 +236,57 @@ function undo() { if (history.length < 2) return; future.push(history.pop()); re
 function redo() { const next = future.pop(); if (!next) return; history.push(next); restoreSnapshot(JSON.parse(next)); persist(); updateHistoryButtons(); }
 function updateHistoryButtons() { if ($("undoButton")) $("undoButton").disabled = history.length < 2; if ($("redoButton")) $("redoButton").disabled = !future.length; }
 
+/* ---------- Built-in demo assets ----------
+   Same-origin fetch -> Blob -> data URL. Everything downstream (preview, PNG,
+   SVG) then references a self-contained data URL, so an exported SVG opened
+   offline — including from iOS Safari — still shows the artwork. */
+const demoAssetCache = new Map();
+async function loadDemoAsset(url) {
+  if (demoAssetCache.has(url)) return demoAssetCache.get(url);
+  const response = await fetch(url, { cache: "force-cache" });
+  if (!response.ok) throw new Error(`素材加载失败：${url}`);
+  const blob = await response.blob();
+  const dataUrl = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = reject; r.readAsDataURL(blob); });
+  demoAssetCache.set(url, dataUrl);
+  return dataUrl;
+}
+async function loadDemoPreset(id, { silent = false } = {}) {
+  const demo = DEMO_PRESETS[id];
+  if (!demo) return false;
+  const toast = silent ? null : showToast("正在载入示例素材…", "success", true);
+  try {
+    const [background, logo] = await Promise.all([loadDemoAsset(demo.background), loadDemoAsset(demo.logo)]);
+    beginInteraction();
+    Object.assign(state, DEFAULTS, demo.content, demo.state, { background, logo, demoId: demo.id, themes: [], selectedTheme: -1, editorTarget: null, layoutStateVersion: LAYOUT_STATE_VERSION });
+    logoCropCache = null; logoAspectCache = { src: "", aspect: 1 };
+    await refreshLogoAspect();
+    await refreshLogoCropBounds({ recomputeScale: true });
+    applySmartLayoutForContent();
+    invalidateSmartCache();
+    extractThemeColors(background);
+    state.smartSummary = "已载入暝夜示例（可点击智能适配重新分析）";
+    syncUi(); scheduleRender(); endInteraction();
+    toast?.remove();
+    if (!silent) showToast("已载入暝夜示例，可通过撤销恢复之前的作品。");
+    return true;
+  } catch (err) {
+    toast?.remove();
+    if (!silent) showToast(`示例载入失败：${err.message || "未知错误"}`, "error", true);
+    return false;
+  }
+}
+async function loadDemoWithConfirm(id) {
+  const dirty = Boolean(state.background || state.logo || state.demoId !== id);
+  if (dirty && !confirm("载入暝夜示例会替换当前的素材与文案，此操作可以撤销。是否继续？")) return;
+  await loadDemoPreset(id);
+}
+function hasSavedWork() { try { return Boolean(localStorage.getItem(STORAGE_KEY) || LEGACY_STORAGE_KEYS.some(k => localStorage.getItem(k))); } catch (_) { return false; } }
 function saveState() { try { const plain = snapshot(); localStorage.setItem(STORAGE_KEY, JSON.stringify(plain)); } catch (err) { if (!storageWarningShown) { storageWarningShown = true; showToast("存储空间不足，已优先保留当前会话，请尽快导出作品。", "error", true); } } }
 function openDb() { return new Promise((resolve, reject) => { if (!window.indexedDB) return reject(new Error("IndexedDB unavailable")); const req = indexedDB.open(DB_NAME, 1); req.onupgradeneeded = () => req.result.createObjectStore("assets"); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
 async function dbPut(key, value) { try { const db = await openDb(); await new Promise((resolve, reject) => { const tx = db.transaction("assets", "readwrite"); tx.objectStore("assets").put(value, key); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); }); db.close(); } catch (_) { if (!dbWarningShown) { dbWarningShown = true; showToast("当前浏览器无法长期保存素材，关闭页面前请先导出作品。", "error", true); } } }
 async function dbGet(key) { try { const db = await openDb(); const val = await new Promise((resolve, reject) => { const tx = db.transaction("assets", "readonly"); const req = tx.objectStore("assets").get(key); req.onsuccess = () => resolve(req.result || ""); req.onerror = () => reject(req.error); }); db.close(); return val; } catch (_) { if (!dbWarningShown) { dbWarningShown = true; showToast("当前浏览器无法长期保存素材，关闭页面前请先导出作品。", "error", true); } return ""; } }
 function persist() { clearTimeout(persistTimer); persistTimer = setTimeout(() => { saveState(); dbPut("background", state.background); dbPut("logo", state.logo); dbPut("font", state.customFontData); }, 180); }
-async function restorePersisted() { try { const source = [STORAGE_KEY, ...LEGACY_STORAGE_KEYS].map(k => localStorage.getItem(k)).find(Boolean); const saved = JSON.parse(source || "null"); if (!saved) return; const legacyPreset = saved.glassPreset; const hadMaterialBase = Object.prototype.hasOwnProperty.call(saved, "materialBase"); const oldFont = saved.fontFamily; Object.assign(state, saved); if (oldFont && !saved.titleFontFamily) state.titleFontFamily = oldFont; if (oldFont && !saved.bodyFontFamily) state.bodyFontFamily = oldFont; if (!saved.customFontScope) state.customFontScope = "title"; normalizeState(); if (!hadMaterialBase && LEGACY_MATERIAL_MAP[legacyPreset]) { const p = MATERIAL_PRESETS[state.materialBase]; state.glassDepth = p.glassDepth; state.cardOpacity = p.cardOpacity; state.glassDispersion = p.glassDispersion; } state.background = await dbGet("background"); state.logo = await dbGet("logo"); state.customFontData = await dbGet("font"); if (state.customFontData && state.customFontName) await registerCustomFont(false); if (state.background) extractThemeColors(state.background); showToast("已恢复上次编辑"); } catch (_) {} }
+async function restorePersisted() { try { const source = [STORAGE_KEY, ...LEGACY_STORAGE_KEYS].map(k => localStorage.getItem(k)).find(Boolean); const saved = JSON.parse(source || "null"); if (!saved) return false; const legacyPreset = saved.glassPreset; const hadMaterialBase = Object.prototype.hasOwnProperty.call(saved, "materialBase"); const oldFont = saved.fontFamily; Object.assign(state, saved); if (oldFont && !saved.titleFontFamily) state.titleFontFamily = oldFont; if (oldFont && !saved.bodyFontFamily) state.bodyFontFamily = oldFont; if (!saved.customFontScope) state.customFontScope = "title"; const migrated = migrateLayoutState(saved); normalizeState(); if (!hadMaterialBase && LEGACY_MATERIAL_MAP[legacyPreset]) { const p = MATERIAL_PRESETS[state.materialBase]; state.glassDepth = p.glassDepth; state.cardOpacity = p.cardOpacity; state.glassDispersion = p.glassDispersion; } state.background = await dbGet("background"); state.logo = await dbGet("logo"); state.customFontData = await dbGet("font"); if (state.customFontData && state.customFontName) await registerCustomFont(false); await refreshLogoAspect(); if (state.logo && !state.logoCropBounds) await refreshLogoCropBounds(); if (state.background) extractThemeColors(state.background); showToast(migrated ? "已恢复上次编辑，并已迁移到新的可见间距排版。" : "已恢复上次编辑"); return true; } catch (_) { return false; } }
 
 function buildDefaultBackground() { const markup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1932 1360"><defs><linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#070A12"/><stop offset="1" stop-color="#111827"/></linearGradient><radialGradient id="warm" cx="13%" cy="10%" r="62%"><stop stop-color="#f0c9be" stop-opacity=".30"/><stop offset="1" stop-color="#f0c9be" stop-opacity="0"/></radialGradient><radialGradient id="cool" cx="83%" cy="85%" r="68%"><stop stop-color="#6e83d3" stop-opacity=".36"/><stop offset="1" stop-color="#6e83d3" stop-opacity="0"/></radialGradient><radialGradient id="vignette" cx="50%" cy="48%" r="74%"><stop offset=".62" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".15"/></radialGradient></defs><rect width="100%" height="100%" fill="url(#base)"/><rect width="100%" height="100%" fill="url(#warm)"/><rect width="100%" height="100%" fill="url(#cool)"/><rect width="100%" height="100%" fill="url(#vignette)"/></svg>`; return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`; }
 function buildDefaultLogo() { const markup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#dce6ff"/></linearGradient></defs><path d="M250 58 412 152v196L250 442 88 348V152Z" fill="rgba(255,255,255,.12)" stroke="url(#g)" stroke-width="18"/><path d="M156 250h188M250 156v188" stroke="url(#g)" stroke-width="30" stroke-linecap="round"/><circle cx="250" cy="250" r="78" fill="none" stroke="url(#g)" stroke-width="20"/></svg>`; return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`; }
@@ -183,7 +308,7 @@ function currentTypography() {
   clone.title.opacity = Number.isFinite(Number(state.titleOpacity)) ? Number(state.titleOpacity) : clone.title.opacity;
   clone.description.fontSize = density?.descFontSize || clone.description.fontSize;
   clone.description.opacity = Number.isFinite(Number(state.descOpacity)) ? Number(state.descOpacity) : (density?.descOpacity || clone.description.opacity);
-  clone.description.lineHeight = state.descLineGap;
+  clone.description.lineHeight = state.descriptionLineBaselineGap;
   clone.divider.width = state.dividerWidth || density?.dividerWidth || src.divider.width;
   clone.title.fontWeight = rec.titleWeight || clone.title.fontWeight;
   clone.description.fontWeight = rec.bodyWeight || clone.description.fontWeight;
@@ -197,6 +322,19 @@ function textContext(fontFamily, size, weight) { const canvas = document.createE
 function graphemes(value) { const text = String(value || ""); if (window.Intl?.Segmenter) return Array.from(new Intl.Segmenter("zh", { granularity: "grapheme" }).segment(text), s => s.segment); return Array.from(text); }
 function measureText(text, size, weight, spacing = 0, family = fontStackForRole("title")) { const chars = graphemes(text); const ctx = textContext(family, size, weight); return ctx.measureText(text).width + Math.max(0, chars.length - 1) * spacing; }
 function textMetrics(size, weight, family = fontStackForRole("description")) { const ctx = textContext(family, size, weight); const metrics = ctx.measureText("成就 Achievement 0123"); return { ascent: metrics.actualBoundingBoxAscent || size * .78, descent: metrics.actualBoundingBoxDescent || size * .22 }; }
+/* Phase 1 measurement: real glyph ink bounds for one concrete string.
+   Falls back to fontSize ratios only when actualBoundingBox* is unavailable. */
+function glyphMetrics(text, size, weight, family) {
+  const fallback = { ascent: size * .78, descent: size * .22, measured: false };
+  const value = String(text ?? "");
+  if (!value.trim()) return { ascent: 0, descent: 0, measured: true, empty: true };
+  try {
+    const m = textContext(family, size, weight).measureText(value);
+    const ascent = Number(m.actualBoundingBoxAscent), descent = Number(m.actualBoundingBoxDescent);
+    if (Number.isFinite(ascent) && Number.isFinite(descent) && (ascent > 0 || descent > 0)) return { ascent, descent, measured: true };
+  } catch (_) {}
+  return fallback;
+}
 const NO_LINE_START = new Set("，。！？、；：）】》」』…％,.;:!?)]}%".split(""));
 const NO_LINE_END = new Set("（【《「『([{".split(""));
 function validBreak(prev, next) { if (!prev || !next) return true; if (NO_LINE_START.has(next)) return false; if (NO_LINE_END.has(prev)) return false; return true; }
@@ -280,40 +418,283 @@ function buildDefs(card, logoBox, material, typography) { const logoRadius = sta
     <radialGradient id="surfaceHighlight" cx="12%" cy="10%" r="62%"><stop stop-color="${material.reflectionAColor}" stop-opacity="${material.reflectionAOpacity}"/><stop offset=".60" stop-color="${material.reflectionAColor}" stop-opacity="${material.reflectionAOpacity * .20}"/><stop offset="1" stop-color="${material.reflectionAColor}" stop-opacity="0"/></radialGradient>
     <radialGradient id="coolReflection" cx="88%" cy="88%" r="58%"><stop stop-color="${material.reflectionBColor}" stop-opacity="${material.reflectionBOpacity}"/><stop offset=".62" stop-color="${material.reflectionBColor}" stop-opacity="${material.reflectionBOpacity * .22}"/><stop offset="1" stop-color="${material.reflectionBColor}" stop-opacity="0"/></radialGradient>
     <radialGradient id="secondaryAccentReflection" cx="94%" cy="16%" r="44%"><stop stop-color="${state.secondaryAccent || material.reflectionBColor}" stop-opacity="${state.secondaryAccent ? .045 : 0}"/><stop offset=".55" stop-color="${state.secondaryAccent || material.reflectionBColor}" stop-opacity="${state.secondaryAccent ? .014 : 0}"/><stop offset="1" stop-color="${state.secondaryAccent || material.reflectionBColor}" stop-opacity="0"/></radialGradient>
-    <linearGradient id="systemTitleRule" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${state.accentColor}" stop-opacity=".24"/><stop offset=".42" stop-color="${state.textColor}" stop-opacity=".12"/><stop offset="1" stop-color="${state.textColor}" stop-opacity="0"/></linearGradient>
+    <linearGradient id="systemTitleRule" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${state.accentColor}" stop-opacity=".28"/><stop offset=".5" stop-color="${state.textColor}" stop-opacity=".12"/><stop offset="1" stop-color="${state.textColor}" stop-opacity="0"/></linearGradient>
     <linearGradient id="certificateRule" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${state.accentColor}" stop-opacity="0"/><stop offset=".5" stop-color="${state.accentColor}" stop-opacity=".20"/><stop offset="1" stop-color="${state.accentColor}" stop-opacity="0"/></linearGradient>
     <path id="edgeA" d="${edgeA}"/><path id="edgeB" d="${edgeB}"/>
   </defs>`; }
 function renderGlass(card, logoBox, material, bg) { const dispersion = material.dispersionAmount; return `<g aria-label="system frosted glass card"><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="${material.shadowColor}" fill-opacity=".01" filter="url(#ambientShadow)"/><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="${material.shadowColor}" fill-opacity=".01" filter="url(#contactShadow)"/>${imageLayer(bg,"cardClip",{x:0,y:0,width:state.width,height:state.height},state.backgroundScale,state.backgroundX,state.backgroundY,{filter:"url(#frostedBlur)",expand:1.04})}<rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#glassTint)" clip-path="url(#cardClip)"/><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#surfaceHighlight)" clip-path="url(#cardClip)"/><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#coolReflection)" clip-path="url(#cardClip)"/><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#secondaryAccentReflection)" clip-path="url(#cardClip)"/>${dispersion ? `<use href="#edgeA" xlink:href="#edgeA" transform="translate(${-dispersion},0)" fill="none" stroke="#79b7ff" stroke-opacity="${material.dispersionOpacity}" stroke-width="1"/><use href="#edgeB" xlink:href="#edgeB" transform="translate(${dispersion},0)" fill="none" stroke="#ff8a9d" stroke-opacity="${material.dispersionOpacity}" stroke-width="1"/>` : ""}<rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="none" stroke="url(#borderGradient)" stroke-width="2.5"/><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="none" stroke="url(#topHighlight)" stroke-width="1"/><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="none" stroke="url(#bottomShade)" stroke-width="1"/></g>`; }
-function renderLogoLayer(logoBox, material, bg) { const logo = state.logo || buildDefaultLogo(); const logoRadius = state.layoutPreset === "certificate" ? 44 : 60; const logoPlacement = imageLayer(logo, "logoClip", logoBox, state.logoScale, state.logoX, state.logoY, { preserve: "xMidYMid slice" }); return state.logoStyle === "glass" ? `<g aria-label="logo glass container"><rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="${logoRadius}" fill="${material.shadowColor}" fill-opacity=".01" filter="url(#floatingLogoShadow)"/>${imageLayer(bg,"logoClip",{x:0,y:0,width:state.width,height:state.height},state.backgroundScale,state.backgroundX,state.backgroundY,{filter:"url(#frostedBlur)",expand:1.04})}<rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="${logoRadius}" fill="url(#glassTint)"/><rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="${logoRadius}" fill="none" stroke="url(#borderGradient)" stroke-width="2"/><rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="${logoRadius}" fill="none" stroke="url(#topHighlight)" stroke-width="1"/>${logoPlacement}</g>` : `<g filter="url(#floatingLogoShadow)" aria-label="floating logo">${logoPlacement}</g>`; }
+function renderLogoLayer(logoBox, material, bg) {
+  const logo = state.logo || buildDefaultLogo();
+  const logoRadius = state.layoutPreset === "certificate" ? 44 : 60;
+  const geo = logoContentGeometry(logoBox);
+  const p = geo.image;
+  // floating: only the card clip constrains the logo, so scaling up can never be
+  // truncated by the old fixed logoBox. glass: keep the container clip.
+  const clipId = state.logoStyle === "glass" ? "logoClip" : "cardClip";
+  const logoPlacement = `<image href="${logo}" xlink:href="${logo}" x="${p.x}" y="${p.y}" width="${p.width}" height="${p.height}" preserveAspectRatio="none" clip-path="url(#${clipId})"/>`;
+  return state.logoStyle === "glass"
+    ? `<g aria-label="logo glass container"><rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="${logoRadius}" fill="${material.shadowColor}" fill-opacity=".01" filter="url(#floatingLogoShadow)"/>${imageLayer(bg,"logoClip",{x:0,y:0,width:state.width,height:state.height},state.backgroundScale,state.backgroundX,state.backgroundY,{filter:"url(#frostedBlur)",expand:1.04})}<rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="${logoRadius}" fill="url(#glassTint)"/><rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="${logoRadius}" fill="none" stroke="url(#borderGradient)" stroke-width="2"/><rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="${logoRadius}" fill="none" stroke="url(#topHighlight)" stroke-width="1"/>${logoPlacement}</g>`
+    : `<g filter="url(#floatingLogoShadow)" aria-label="floating logo">${logoPlacement}</g>`;
+}
+
+/* Two-phase system typography layout.
+   Phase 1 measures every glyph run's real ink bounds; phase 2 derives the whole
+   text block height from those bounds and centres it on the card, then walks
+   baselines back out from textBlockTop. No baseline is ever anchored to the
+   card top or to the logo box. */
+function layoutSystemTypography({ card, logoBox, subtitle, title, descriptionLines: descLines, typographyTokens, visibleGaps, dividerMode: dividerVisible }) {
+  const t = typographyTokens;
+  const hasSubtitle = Boolean(String(subtitle ?? "").trim());
+  const hasDescription = Array.isArray(descLines) && descLines.length > 0;
+
+  /* ---- Phase 1: measure ---- */
+  const subtitleInk = hasSubtitle ? glyphMetrics(subtitle, t.subtitle.fontSize, t.subtitle.fontWeight, t.subtitle.family) : { ascent: 0, descent: 0, empty: true };
+  const titleInk = glyphMetrics(title, t.title.fontSize, t.title.fontWeight, t.title.family);
+  const descInk = hasDescription ? descLines.map(line => glyphMetrics(line, t.description.fontSize, t.description.fontWeight, t.description.family)) : [];
+  const dividerHeight = dividerVisible ? 1 : 0;
+  const lineGap = visibleGaps.descriptionLineBaselineGap;
+
+  /* ---- Phase 2: arrange from a measured total height ---- */
+  const segments = [];
+  if (hasSubtitle) segments.push({ role: "subtitle", ink: subtitleInk });
+  segments.push({ role: "title", ink: titleInk });
+  if (dividerVisible) segments.push({ role: "divider", ink: { ascent: dividerHeight, descent: 0 } });
+  if (hasDescription) segments.push({ role: "description", ink: descInk[0], tail: descInk.slice(1) });
+
+  const gapBefore = (role, prevRole) => {
+    if (!prevRole) return 0;
+    if (role === "title" && prevRole === "subtitle") return visibleGaps.subtitleTitleVisualGap;
+    if (role === "divider") return visibleGaps.titleDividerVisualGap;
+    if (role === "description") return prevRole === "divider" ? visibleGaps.dividerDescriptionVisualGap : visibleGaps.titleDividerVisualGap;
+    return 0;
+  };
+
+  // Total visible height = sum of ink heights + visible gaps + trailing description lines.
+  let textBlockHeight = 0, prevRole = null;
+  segments.forEach(seg => {
+    textBlockHeight += gapBefore(seg.role, prevRole);
+    textBlockHeight += seg.ink.ascent + seg.ink.descent;
+    if (seg.role === "description" && seg.tail?.length) {
+      // subsequent lines advance by baseline gap; the block bottom is the last line's descent
+      textBlockHeight += seg.tail.length * lineGap - seg.ink.descent + seg.tail.at(-1).descent;
+    }
+    prevRole = seg.role;
+  });
+
+  const targetCenterY = card.y + card.height / 2 + visibleGaps.textOpticalOffsetY;
+  const textBlockTop = targetCenterY - textBlockHeight / 2;
+
+  // Walk baselines out from the measured top.
+  const positions = {};
+  let cursor = textBlockTop;
+  prevRole = null;
+  segments.forEach(seg => {
+    cursor += gapBefore(seg.role, prevRole);
+    if (seg.role === "divider") {
+      positions.dividerY = cursor + dividerHeight / 2;
+      cursor += dividerHeight;
+    } else {
+      const baseline = cursor + seg.ink.ascent;
+      if (seg.role === "subtitle") positions.subtitleBaselineY = baseline;
+      if (seg.role === "title") positions.titleBaselineY = baseline;
+      if (seg.role === "description") {
+        positions.descriptionBaselines = [baseline, ...(seg.tail || []).map((_, i) => baseline + (i + 1) * lineGap)];
+        cursor = positions.descriptionBaselines.at(-1) + (seg.tail?.length ? seg.tail.at(-1).descent : seg.ink.descent);
+        prevRole = seg.role;
+        return;
+      }
+      // Advance past the full ink height of this run, not just its descent.
+      cursor = baseline + seg.ink.descent;
+    }
+    prevRole = seg.role;
+  });
+
+  const textBlockBottom = textBlockTop + textBlockHeight;
+  return {
+    ...positions,
+    textBlockTop, textBlockBottom, textBlockHeight,
+    textBlockVisualCenterY: textBlockTop + textBlockHeight / 2,
+    cardCenterY: card.y + card.height / 2,
+    subtitleInk, titleInk, descInk, hasSubtitle, hasDescription
+  };
+}
+
+function systemColumns(card, logoBox) {
+  const contentX = logoBox.x + logoBox.width + Math.max(70, Math.min(86, 78));
+  return { contentX, contentRight: card.x + card.width - 110 };
+}
+function systemTextPlan(card, logoBox, typography) {
+  const { contentX, contentRight } = systemColumns(card, logoBox);
+  const subtitle = typography.subtitle, titleToken = typography.title, descToken = typography.description;
+  const titleFamily = fontStackForRole("title"), subtitleFamily = fontStackForRole("subtitle"), descFamily = fontStackForRole("description");
+  const columnWidth = Math.max(120, contentRight - contentX);
+  const title = fitTitleSingle(state.mainTitle, columnWidth, titleToken.fontSize, titleToken.minFontSize, titleToken.fontWeight, titleToken.letterSpacing, titleFamily);
+  const descWidth = Math.min(state.descriptionBoxWidth, columnWidth);
+  const lineCountEstimate = estimateDescriptionLineCount(descWidth, descToken.fontSize, descToken.fontWeight, descToken.letterSpacing, descFamily);
+  const showDivider = shouldShowDivider(lineCountEstimate);
+  const maxLines = String(state.description || "").trim() ? Math.max(1, Math.min(3, lineCountEstimate)) : 0;
+  const desc = maxLines ? descriptionLines(maxLines, descWidth, descToken.fontSize, descToken.fontWeight, descToken.letterSpacing, descFamily) : { lines: [], overflow: false };
+  const layout = layoutSystemTypography({
+    card, logoBox,
+    subtitle: state.subTitle, title: state.mainTitle, descriptionLines: desc.lines,
+    typographyTokens: {
+      subtitle: { ...subtitle, family: subtitleFamily },
+      title: { ...titleToken, fontSize: title.size, family: titleFamily },
+      description: { ...descToken, family: descFamily }
+    },
+    visibleGaps: {
+      subtitleTitleVisualGap: Number(state.subtitleTitleVisualGap),
+      titleDividerVisualGap: Number(state.titleDividerVisualGap),
+      dividerDescriptionVisualGap: Number(state.dividerDescriptionVisualGap),
+      descriptionLineBaselineGap: Number(state.descriptionLineBaselineGap),
+      textOpticalOffsetY: Number(state.textOpticalOffsetY) || 0
+    },
+    dividerMode: showDivider
+  });
+  return { contentX, contentRight, columnWidth, title, desc, showDivider, layout, subtitle, titleToken, descToken, subtitleFamily };
+}
+/* ---------- Logo transparent-padding auto crop ----------
+   Scans the alpha channel on a downscaled offscreen canvas (256px max edge for
+   mobile performance), computes the non-transparent bounding box, pads it and
+   stores it as a NORMALISED rect so no large bitmap is ever persisted. */
+let logoCropCache = null;
+let logoCropPending = false;
+function normalizedCropFull() { return { cropX: 0, cropY: 0, cropWidth: 1, cropHeight: 1, cropped: false }; }
+async function computeLogoCropBounds(src) {
+  if (!src) return normalizedCropFull();
+  if (logoCropCache?.src === src) return logoCropCache.bounds;
+  let bounds = normalizedCropFull();
+  try {
+    const img = await imageFromSource(src);
+    const sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
+    if (!sw || !sh) return bounds;
+    bounds.srcAspect = sw / sh;
+    const ratio = Math.min(1, ALPHA_SCAN_EDGE / Math.max(sw, sh));
+    const w = Math.max(1, Math.round(sw * ratio)), h = Math.max(1, Math.round(sh * ratio));
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    canvas.width = w; canvas.height = h;
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    const data = ctx.getImageData(0, 0, w, h).data;
+    let minX = w, minY = h, maxX = -1, maxY = -1, opaque = 0;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (data[(y * w + x) * 4 + 3] < ALPHA_MIN) continue;
+        opaque++;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+    canvas.width = canvas.height = 0;
+    // No transparency at all (or fully transparent) -> keep the original canvas.
+    if (maxX < 0 || opaque === w * h) return (logoCropCache = { src, bounds }).bounds;
+    let bx = minX / w, by = minY / h, bw = (maxX - minX + 1) / w, bh = (maxY - minY + 1) / h;
+    if (bw >= .995 && bh >= .995) return (logoCropCache = { src, bounds }).bounds;
+    const padX = bw * LOGO_CROP_PADDING, padY = bh * LOGO_CROP_PADDING;
+    bx = Math.max(0, bx - padX); by = Math.max(0, by - padY);
+    bw = Math.min(1 - bx, bw + padX * 2); bh = Math.min(1 - by, bh + padY * 2);
+    bounds = { cropX: bx, cropY: by, cropWidth: bw, cropHeight: bh, cropped: true, srcAspect: sw / sh };
+  } catch (_) { bounds = normalizedCropFull(); }
+  logoCropCache = { src, bounds };
+  return bounds;
+}
+function activeLogoCrop() {
+  const b = state.logoCropBounds;
+  const srcAspect = Number(b?.srcAspect);
+  if (state.logoCropMode === "original") return { ...normalizedCropFull(), srcAspect };
+  if (!b || !Number.isFinite(b.cropWidth) || !Number.isFinite(b.cropHeight) || b.cropWidth <= 0 || b.cropHeight <= 0) return { ...normalizedCropFull(), srcAspect };
+  return { cropX: b.cropX || 0, cropY: b.cropY || 0, cropWidth: b.cropWidth, cropHeight: b.cropHeight, cropped: b.cropped !== false, srcAspect };
+}
+async function refreshLogoCropBounds({ recomputeScale = false } = {}) {
+  if (!state.logo) { state.logoCropBounds = null; return; }
+  state.logoCropBounds = await computeLogoCropBounds(state.logo);
+  if (recomputeScale) state.logoScale = DEFAULTS.logoScale;
+}
+/* Geometry of the visible (effective) logo content, honouring the crop.
+   The placement rect is expanded so the CROPPED content — not the raw PNG —
+   ends up at the requested visual size, keeping aspect ratio intact. */
+function logoContentGeometry(logoBox) {
+  const crop = activeLogoCrop();
+  // Self-heal: if bounds/aspect are missing (e.g. restored from an older cache),
+  // schedule a recompute so the badge never stays at a wrong 1:1 ratio.
+  if (state.logo && !state.logoCropBounds && !logoCropPending) { logoCropPending = true; refreshLogoCropBounds().then(() => { logoCropPending = false; scheduleRender(); }).catch(() => { logoCropPending = false; }); }
+  const scale = clamp(Number(state.logoScale) || 100, 40, 600) / 100;
+  const targetBase = Math.min(logoBox.width, logoBox.height);
+  const aspect = logoNaturalAspect();
+  // Effective content box before user scaling: fit inside the logo box.
+  let contentW = targetBase, contentH = targetBase;
+  if (aspect > 1) contentH = targetBase / aspect; else if (aspect < 1) contentW = targetBase * aspect;
+  contentW *= scale; contentH *= scale;
+  const centerX = logoBox.x + logoBox.width / 2 + (Number(state.logoX) || 0) / 100 * LOGO_OFFSET_RANGE.x;
+  const centerY = logoBox.y + logoBox.height / 2 + (Number(state.logoY) || 0) / 100 * LOGO_OFFSET_RANGE.y;
+  // Expand the drawn image so that only the crop region covers the content box.
+  const drawW = contentW / crop.cropWidth, drawH = contentH / crop.cropHeight;
+  const image = { x: centerX - contentW / 2 - crop.cropX * drawW, y: centerY - contentH / 2 - crop.cropY * drawH, width: drawW, height: drawH };
+  // True visible ink extent. With auto crop this equals the content box; with
+  // "original canvas" the artwork keeps its transparent margins, so the badge
+  // the user actually sees is proportionally smaller.
+  const raw = state.logoCropBounds;
+  const hasInk = raw && raw.cropped !== false && Number.isFinite(Number(raw.cropWidth)) && Number.isFinite(Number(raw.cropHeight));
+  const visible = crop.cropped || !hasInk
+    ? { x: centerX - contentW / 2, y: centerY - contentH / 2, width: contentW, height: contentH }
+    : { x: image.x + Number(raw.cropX) * drawW, y: image.y + Number(raw.cropY) * drawH, width: drawW * Number(raw.cropWidth), height: drawH * Number(raw.cropHeight) };
+  return {
+    crop,
+    content: { x: centerX - contentW / 2, y: centerY - contentH / 2, width: contentW, height: contentH },
+    visible,
+    image: { x: centerX - contentW / 2 - crop.cropX * drawW, y: centerY - contentH / 2 - crop.cropY * drawH, width: drawW, height: drawH },
+    centerX, centerY
+  };
+}
+/* Source aspect is stored alongside the normalised crop so geometry is fully
+   synchronous after restore — otherwise the first paint could use a stale 1:1
+   ratio and the badge would visibly resize once the async probe resolved. */
+let logoAspectCache = { src: "", aspect: 1 };
+function logoNaturalAspect() {
+  const crop = activeLogoCrop();
+  const stored = Number(state.logoCropBounds?.srcAspect);
+  const base = Number.isFinite(stored) && stored > 0 ? stored : (logoAspectCache.aspect || 1);
+  return base * (crop.cropWidth / crop.cropHeight);
+}
+async function refreshLogoAspect() {
+  const src = state.logo;
+  if (!src) { logoAspectCache = { src: "", aspect: 1 }; return; }
+  if (logoAspectCache.src === src) return;
+  try { const img = await imageFromSource(src); const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height; logoAspectCache = { src, aspect: h ? w / h : 1 }; }
+  catch (_) { logoAspectCache = { src, aspect: 1 }; }
+}
+function updateLayoutDiagnostics(card, logoBox, layout) {
+  const el = $("layoutDiagnostics");
+  if (!el) return;
+  const delta = Math.abs(layout.textBlockVisualCenterY - layout.cardCenterY - (Number(state.textOpticalOffsetY) || 0));
+  const geo = logoContentGeometry(logoBox);
+  const box = geo.visible || geo.content;
+  const safeTop = box.y - card.y, safeBottom = card.y + card.height - (box.y + box.height);
+  const clipped = safeTop < 0 || safeBottom < 0;
+  const warn = $("logoSafeWarning");
+  if (warn) warn.textContent = clipped ? "Logo 已超出卡片安全区域，导出时将被裁切。" : "";
+  el.textContent = `文字块 ${Math.round(layout.textBlockHeight)}px · 居中偏差 ${delta.toFixed(1)}px · Logo 有效 ${Math.round(box.width)}×${Math.round(box.height)}px`;
+}
 
 function renderSystemCard(card, logoBox, material, typography) {
   const bg = state.background || buildDefaultBackground();
-  const contentX = logoBox.x + logoBox.width + 78;
-  const contentRight = card.x + card.width - 110;
-  const subtitle = typography.subtitle, titleToken = typography.title, descToken = typography.description;
-  const titleFamily = fontStackForRole("title"), subtitleFamily = fontStackForRole("subtitle"), descFamily = fontStackForRole("description");
-  const title = fitTitleSingle(state.mainTitle, contentRight - contentX, titleToken.fontSize, titleToken.minFontSize, titleToken.fontWeight, titleToken.letterSpacing, titleFamily);
-  const titleMetrics = textMetrics(title.size, titleToken.fontWeight, titleFamily);
-  const subtitleMetrics = textMetrics(subtitle.fontSize, subtitle.fontWeight, subtitleFamily);
-  const descMetrics = textMetrics(descToken.fontSize, descToken.fontWeight, descFamily);
-  const titleBaselineY = logoBox.y + titleMetrics.ascent;
-  const subtitleBaselineY = titleBaselineY - state.subtitleTitleGap;
-  const lineCountEstimate = estimateDescriptionLineCount(Math.min(state.descriptionBoxWidth, contentRight - contentX), descToken.fontSize, descToken.fontWeight, descToken.letterSpacing, descFamily);
-  const showDivider = shouldShowDivider(lineCountEstimate);
-  const lineY = titleBaselineY + titleMetrics.descent + (showDivider ? state.titleRuleGap : 0);
-  const descTopY = showDivider ? lineY + state.ruleDescGap : titleBaselineY + titleMetrics.descent + 42;
-  const descBaselineY = descTopY + descMetrics.ascent;
-  const availableHeight = card.y + card.height - 42 - descTopY;
-  const boxMaxLines = Math.max(1, 1 + Math.floor(Math.max(0, state.descriptionBoxHeight - descToken.fontSize) / state.descLineGap));
-  const cardMaxLines = Math.max(1, 1 + Math.floor(Math.max(0, availableHeight - descToken.fontSize) / state.descLineGap));
-  const maxLines = state.description.trim() ? Math.max(1, Math.min(3, boxMaxLines, cardMaxLines)) : 0;
-  const desc = maxLines ? descriptionLines(maxLines, Math.min(state.descriptionBoxWidth, contentRight - contentX), descToken.fontSize, descToken.fontWeight, descToken.letterSpacing, descFamily) : { lines: [], overflow: false };
+  const plan = systemTextPlan(card, logoBox, typography);
+  const { contentX, contentRight, title, desc, showDivider, layout, subtitle, titleToken, descToken } = plan;
+  const subtitleMetrics = layout.subtitleInk;
+  const subtitleBaselineY = layout.subtitleBaselineY;
+  const titleBaselineY = layout.titleBaselineY;
+  const lineY = layout.dividerY;
+  const descBaselines = layout.descriptionBaselines || [];
   if ($("titleWarning")) $("titleWarning").textContent = title.overflow ? "标题过长，已缩小至最小字号；请缩短文字以避免导出溢出。" : "";
   if ($("descriptionWarning")) $("descriptionWarning").textContent = desc.overflow ? "内容过长，导出时将以省略号显示最后一行。" : "";
-  const marker = state.showSubtitleMarker ? `<circle cx="${contentX + 4}" cy="${subtitleBaselineY - subtitleMetrics.ascent / 2 + subtitleMetrics.descent / 2}" r="4" fill="${state.accentColor}" opacity=".82"/>` : "";
+  updateLayoutDiagnostics(card, logoBox, layout);
+  const marker = state.showSubtitleMarker && layout.hasSubtitle ? `<circle cx="${contentX + 4}" cy="${subtitleBaselineY - subtitleMetrics.ascent / 2 + subtitleMetrics.descent / 2}" r="4" fill="${state.accentColor}" opacity=".82"/>` : "";
   const subtitleX = state.showSubtitleMarker ? contentX + 23 : contentX;
-  return `${renderGlass(card, logoBox, material, bg)}${renderLogoLayer(logoBox, material, bg)}<g aria-label="typography" style="--subtitle-size:${subtitle.fontSize}px;--subtitle-weight:${subtitle.fontWeight};--subtitle-spacing:${subtitle.letterSpacing}px;--title-weight:${titleToken.fontWeight};--title-spacing:${titleToken.letterSpacing}px;--desc-size:${descToken.fontSize}px;--desc-weight:${descToken.fontWeight};--desc-spacing:${descToken.letterSpacing}px">${marker}<text x="${subtitleX}" y="${subtitleBaselineY}" class="subtitle-text" fill="${roleColor(subtitle)}" opacity="${subtitle.opacity}">${escapeXml(state.subTitle)}</text><text x="${contentX}" y="${titleBaselineY}" class="title-text" font-size="${title.size}" fill="${roleColor(titleToken)}" opacity="${titleToken.opacity}" filter="url(#titleShadow)">${escapeXml(state.mainTitle)}</text>${showDivider ? `<rect x="${contentX}" y="${lineY - .5}" width="${Math.min(state.dividerWidth, contentRight - contentX)}" height="1" fill="url(#systemTitleRule)"/>` : ""}${desc.lines.length ? `<text x="${contentX}" y="${descBaselineY}" class="description-text" fill="${roleColor(descToken)}" opacity="${descToken.opacity}" filter="url(#descriptionShadow)">${desc.lines.map((line,i) => `<tspan x="${contentX}" dy="${i ? state.descLineGap : 0}">${escapeXml(line)}</tspan>`).join("")}</text>` : ""}</g>`;
+  const dividerW = Math.min(state.dividerWidth, contentRight - contentX);
+  return `${renderGlass(card, logoBox, material, bg)}${renderLogoLayer(logoBox, material, bg)}<g aria-label="typography" style="--subtitle-size:${subtitle.fontSize}px;--subtitle-weight:${subtitle.fontWeight};--subtitle-spacing:${subtitle.letterSpacing}px;--title-weight:${titleToken.fontWeight};--title-spacing:${titleToken.letterSpacing}px;--desc-size:${descToken.fontSize}px;--desc-weight:${descToken.fontWeight};--desc-spacing:${descToken.letterSpacing}px">${marker}${layout.hasSubtitle ? `<text x="${subtitleX}" y="${subtitleBaselineY}" class="subtitle-text" fill="${roleColor(subtitle)}" opacity="${subtitle.opacity}">${escapeXml(state.subTitle)}</text>` : ""}<text x="${contentX}" y="${titleBaselineY}" class="title-text" font-size="${title.size}" fill="${roleColor(titleToken)}" opacity="${titleToken.opacity}" filter="url(#titleShadow)">${escapeXml(state.mainTitle)}</text>${showDivider ? `<rect x="${contentX}" y="${lineY - .5}" width="${dividerW}" height="1" fill="url(#systemTitleRule)"/>` : ""}${desc.lines.length ? `<text x="${contentX}" y="${descBaselines[0]}" class="description-text" fill="${roleColor(descToken)}" opacity="${descToken.opacity}" filter="url(#descriptionShadow)">${desc.lines.map((line,i) => `<tspan x="${contentX}" y="${descBaselines[i]}">${escapeXml(line)}</tspan>`).join("")}</text>` : ""}</g>`;
 }
 function renderCertificateCard(card, logoBox, material, typography) {
   const bg = state.background || buildDefaultBackground();
@@ -330,25 +711,45 @@ function renderCertificateCard(card, logoBox, material, typography) {
   const descMetrics = textMetrics(descToken.fontSize, descToken.fontWeight, descFamily);
   const descTopY = lineY + 78;
   const availableHeight = card.y + card.height - 60 - descTopY;
-  const maxLines = Math.max(1, Math.min(3, 1 + Math.floor(Math.max(0, availableHeight - descToken.fontSize) / state.descLineGap)));
+  const maxLines = Math.max(1, Math.min(3, 1 + Math.floor(Math.max(0, availableHeight - descToken.fontSize) / state.descriptionLineBaselineGap)));
   const desc = descriptionLines(maxLines, descWidth, descToken.fontSize, descToken.fontWeight, descToken.letterSpacing, descFamily);
   if ($("titleWarning")) $("titleWarning").textContent = title.overflow ? "标题过长，已尽量缩小；典藏证书最多显示两行。" : "";
   if ($("descriptionWarning")) $("descriptionWarning").textContent = desc.overflow ? "内容过长，导出时将以省略号显示最后一行。" : "";
   const dot = 4;
-  return `${renderGlass(card, logoBox, material, bg)}${renderLogoLayer(logoBox, material, bg)}<g aria-label="certificate typography" text-anchor="middle" style="--subtitle-size:${subtitle.fontSize}px;--subtitle-weight:${subtitle.fontWeight};--subtitle-spacing:${subtitle.letterSpacing}px;--title-weight:${titleToken.fontWeight};--title-spacing:${Math.max(1, titleToken.letterSpacing)}px;--desc-size:${descToken.fontSize}px;--desc-weight:${descToken.fontWeight};--desc-spacing:${descToken.letterSpacing}px"><text x="${centerX}" y="${subtitleY}" class="subtitle-text" fill="${roleColor(subtitle)}" opacity="${subtitle.opacity}">${escapeXml(state.subTitle)}</text><text x="${centerX}" y="${firstTitleBaseline}" class="title-text" font-size="${title.size}" fill="${roleColor(titleToken)}" opacity="${titleToken.opacity}" filter="url(#titleShadow)">${title.lines.map((line,i) => `<tspan x="${centerX}" dy="${i ? titleLineGap : 0}">${escapeXml(line)}</tspan>`).join("")}</text><rect x="${centerX - Math.min(state.dividerWidth, 360) / 2}" y="${lineY - .5}" width="${Math.min(state.dividerWidth, 360)}" height="1" fill="url(#certificateRule)"/><rect x="${centerX - dot / 2}" y="${lineY - dot / 2}" width="${dot}" height="${dot}" transform="rotate(45 ${centerX} ${lineY})" fill="${state.accentColor}" opacity=".28"/><text x="${centerX}" y="${descTopY + descMetrics.ascent}" class="description-text" fill="${roleColor(descToken)}" opacity="${descToken.opacity}" filter="url(#descriptionShadow)">${desc.lines.map((line,i) => `<tspan x="${centerX}" dy="${i ? state.descLineGap : 0}">${escapeXml(line)}</tspan>`).join("")}</text></g>`;
+  return `${renderGlass(card, logoBox, material, bg)}${renderLogoLayer(logoBox, material, bg)}<g aria-label="certificate typography" text-anchor="middle" style="--subtitle-size:${subtitle.fontSize}px;--subtitle-weight:${subtitle.fontWeight};--subtitle-spacing:${subtitle.letterSpacing}px;--title-weight:${titleToken.fontWeight};--title-spacing:${Math.max(1, titleToken.letterSpacing)}px;--desc-size:${descToken.fontSize}px;--desc-weight:${descToken.fontWeight};--desc-spacing:${descToken.letterSpacing}px"><text x="${centerX}" y="${subtitleY}" class="subtitle-text" fill="${roleColor(subtitle)}" opacity="${subtitle.opacity}">${escapeXml(state.subTitle)}</text><text x="${centerX}" y="${firstTitleBaseline}" class="title-text" font-size="${title.size}" fill="${roleColor(titleToken)}" opacity="${titleToken.opacity}" filter="url(#titleShadow)">${title.lines.map((line,i) => `<tspan x="${centerX}" dy="${i ? titleLineGap : 0}">${escapeXml(line)}</tspan>`).join("")}</text><rect x="${centerX - Math.min(state.dividerWidth, 360) / 2}" y="${lineY - .5}" width="${Math.min(state.dividerWidth, 360)}" height="1" fill="url(#certificateRule)"/><rect x="${centerX - dot / 2}" y="${lineY - dot / 2}" width="${dot}" height="${dot}" transform="rotate(45 ${centerX} ${lineY})" fill="${state.accentColor}" opacity=".28"/><text x="${centerX}" y="${descTopY + descMetrics.ascent}" class="description-text" fill="${roleColor(descToken)}" opacity="${descToken.opacity}" filter="url(#descriptionShadow)">${desc.lines.map((line,i) => `<tspan x="${centerX}" dy="${i ? state.descriptionLineBaselineGap : 0}">${escapeXml(line)}</tspan>`).join("")}</text></g>`;
 }
 function estimateDescriptionLineCount(width = state.descriptionBoxWidth, size = 32, weight = 400, spacing = state.descLetterSpacing, family = fontStackForRole("description")) { const text = String(state.description || "").trim(); if (!text) return 0; const lines=[]; for (const manual of text.split(/\r?\n/)) lines.push(...wrapMeasuredLine(manual, width, size, weight, spacing, family)); return Math.max(1, Math.min(3, lines.length)); }
 function computeSystemAutoLayout() { const lineCount = estimateDescriptionLineCount(860, 32, 400, state.descLetterSpacing, fontStackForRole("description")); const base = AUTO_LAYOUT.system[Math.max(0, Math.min(3, lineCount))] || AUTO_LAYOUT.system[3]; return { ...base, lineCount }; }
 function shouldShowDivider(lineCount) { if (state.dividerMode === "show") return true; if (state.dividerMode === "hide") return false; return lineCount > 0; }
-function layoutGeometry() { if (state.layoutPreset === "certificate") { const base = { x: 226, y: 245, width: 1480, height: 870, radius: 84 }; const scale = clamp(state.cardScale || 100, 86, 108) / 100; const card = { width: base.width * scale, height: base.height * scale, radius: base.radius * scale }; card.x = base.x + (base.width - card.width) / 2 + (state.cardPositionMode === "custom" ? state.cardX : 0); card.y = base.y + (base.height - card.height) / 2 + (state.cardPositionMode === "custom" ? state.cardY : 0); const size = 210 * scale; const logoBox = { x: card.x + (card.width - size) / 2, y: card.y + 92 * scale + state.logoOpticalOffsetY, width: size, height: size }; return { card, logoBox }; } const auto = computeSystemAutoLayout(); const baseWidth = 1556, scale = clamp(state.cardScale || 100, 86, 108) / 100; const height = (state.cardHeightMode === "fixed" ? state.cardHeight : auto.height) * scale; const width = baseWidth * scale; const card = { x: (state.width - width) / 2 + (state.cardPositionMode === "custom" ? state.cardX : 0), y: (state.height - height) / 2 + (state.cardPositionMode === "custom" ? state.cardY : 0), width, height, radius: (state.cardHeightMode === "fixed" ? 92 : auto.radius) * scale }; const logoSize = 312 * scale; const logoBox = { x: card.x + 118 * scale, width: logoSize, height: logoSize }; const autoOffset = state.layoutDensityMode === "auto" ? auto.logoOffset : 0; logoBox.y = card.y + (card.height - logoBox.height) / 2 + autoOffset + state.logoOpticalOffsetY; return { card, logoBox }; }
+function layoutGeometry() {
+  if (state.layoutPreset === "certificate") { const base = { x: 226, y: 245, width: 1480, height: 870, radius: 84 }; const scale = clamp(state.cardScale || 100, 86, 108) / 100; const card = { width: base.width * scale, height: base.height * scale, radius: base.radius * scale }; card.x = base.x + (base.width - card.width) / 2 + (state.cardPositionMode === "custom" ? state.cardX : 0); card.y = base.y + (base.height - card.height) / 2 + (state.cardPositionMode === "custom" ? state.cardY : 0); const size = 210 * scale; const logoBox = { x: card.x + (card.width - size) / 2, y: card.y + 92 * scale + state.logoOpticalOffsetY, width: size, height: size }; return { card, logoBox }; }
+  const auto = computeSystemAutoLayout();
+  const baseWidth = 1556, scale = clamp(state.cardScale || 100, 86, 108) / 100;
+  const height = (state.cardHeightMode === "fixed" ? state.cardHeight : auto.height) * scale;
+  const width = baseWidth * scale;
+  const card = {
+    x: (state.width - width) / 2 + (state.cardPositionMode === "custom" ? state.cardX : 0),
+    y: (state.height - height) / 2 + (state.cardPositionMode === "custom" ? state.cardY : 0),
+    width, height,
+    radius: (state.cardHeightMode === "fixed" ? 92 : auto.radius) * scale
+  };
+  // Logo column: fixed 320px column, content area independently centred on the card.
+  const columnWidth = 320 * scale;
+  const boxSize = (state.logoStyle === "glass" ? clamp(Number(state.logoContainerSize) || auto.logoContainerSize, 220, 460) : auto.logoTarget) * scale;
+  const logoBox = { x: card.x + 118 * scale + (columnWidth - boxSize) / 2, width: boxSize, height: boxSize };
+  logoBox.y = card.y + (card.height - boxSize) / 2 + (Number(state.logoOpticalOffsetY) || 0);
+  logoBox.columnX = card.x + 118 * scale;
+  logoBox.columnWidth = columnWidth;
+  return { card, logoBox };
+}
 function textAreaGeometry(card, logoBox) { if (state.layoutPreset === "certificate") return { x: card.x + 330, y: card.y + 555, width: Math.min(820, state.descriptionBoxWidth), height: 260 }; const contentX = logoBox.x + logoBox.width + 78; return { x: contentX, y: logoBox.y, width: Math.min(state.descriptionBoxWidth, card.x + card.width - 110 - contentX), height: card.height - 140 }; }
 function renderSvg() { const { card, logoBox } = layoutGeometry(); const material = currentMaterialToken(); const typography = currentTypography(); const bg = state.background || buildDefaultBackground(); svg.setAttribute("viewBox", `0 0 ${state.width} ${state.height}`); svg.setAttribute("width", state.width); svg.setAttribute("height", state.height); svg.setAttribute("xmlns", "http://www.w3.org/2000/svg"); svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink"); const cardMarkup = state.layoutPreset === "certificate" ? renderCertificateCard(card, logoBox, material, typography) : renderSystemCard(card, logoBox, material, typography); svg.innerHTML = `${styleBlock()}${buildDefs(card,logoBox,material,typography)}<rect width="100%" height="100%" fill="#070A12"/>${imageLayer(bg,"canvasClip",{x:0,y:0,width:state.width,height:state.height},state.backgroundScale,state.backgroundX,state.backgroundY,{opacity:state.backgroundOpacity/100})}${cardMarkup}`; svg.style.width = `${state.zoom}%`; if ($("zoomReadout")) $("zoomReadout").textContent = `${state.zoom}%`; if ($("dpiInfo")) $("dpiInfo").textContent = `${state.width}×${state.height} 高清 PNG`; renderSelection(card, logoBox); updateAssetCards(); }
 function scheduleRender() { if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; renderSvg(); }); }
 
-function createRange(key) { const [min,max,step] = RANGE_CONFIG[key]; const wrap = document.createElement("label"); wrap.textContent = RANGE_LABELS[key]; const control = document.createElement("div"); control.className = "range-control"; const range = document.createElement("input"); range.type = "range"; range.min = min; range.max = max; range.step = step; range.value = state[key]; range.id = key; range.setAttribute("aria-label", RANGE_LABELS[key]); const number = document.createElement("input"); number.type = "number"; number.min = min; number.max = max; number.step = step; number.value = state[key]; number.id = `${key}Number`; number.className = "range-number"; const reset = document.createElement("button"); reset.type = "button"; reset.className = "reset-mini"; reset.textContent = "复原"; reset.title = "复原此项默认值"; control.append(range,number,reset); wrap.append(control); const set = v => { state[key] = clamp(v,min,max); if (["titleRuleGap","ruleDescGap","descLineGap","dividerWidth","logoOpticalOffsetY"].includes(key)) state.layoutDensityMode = "custom"; if (["cardHeight"].includes(key)) state.cardHeightMode = "fixed"; if (["cardX","cardY","cardScale"].includes(key)) state.cardPositionMode = "custom"; syncRange(key); if (["glassDepth","cardOpacity","glassDispersion","glassSaturation","glassContrast","glassTintOpacity"].includes(key)) { markPresetCustom(); markSmartManual(); } if (["backgroundScale","backgroundX","backgroundY","backgroundOpacity"].includes(key)) invalidateSmartCache(); scheduleRender(); queuePersist(); }; range.addEventListener("pointerdown", beginInteraction); range.addEventListener("input", e => set(e.target.value)); range.addEventListener("change", endInteraction); number.addEventListener("focus", beginInteraction); number.addEventListener("input", e => set(e.target.value)); number.addEventListener("change", endInteraction); reset.addEventListener("click", () => { beginInteraction(); set(DEFAULTS[key]); endInteraction(); }); return wrap; }
+function createRange(key) { const [min,max,step] = RANGE_CONFIG[key]; const wrap = document.createElement("label"); wrap.textContent = RANGE_LABELS[key]; const control = document.createElement("div"); control.className = "range-control"; const range = document.createElement("input"); range.type = "range"; range.min = min; range.max = max; range.step = step; range.value = state[key]; range.id = key; range.setAttribute("aria-label", RANGE_LABELS[key]); const number = document.createElement("input"); number.type = "number"; number.min = min; number.max = RANGE_INPUT_MAX[key] ?? max; number.step = step; number.value = state[key]; number.id = `${key}Number`; number.className = "range-number"; const reset = document.createElement("button"); reset.type = "button"; reset.className = "reset-mini"; reset.textContent = "复原"; reset.title = "复原此项默认值"; control.append(range,number,reset); wrap.append(control); const inputMax = RANGE_INPUT_MAX[key] ?? max; const set = (v, viaNumber = false) => { state[key] = clamp(v, min, viaNumber ? inputMax : max); if (["subtitleTitleVisualGap","titleDividerVisualGap","dividerDescriptionVisualGap","descriptionLineBaselineGap","dividerWidth","textOpticalOffsetY","logoOpticalOffsetY"].includes(key)) state.layoutDensityMode = "custom"; if (["cardHeight"].includes(key)) state.cardHeightMode = "fixed"; if (["cardX","cardY","cardScale"].includes(key)) state.cardPositionMode = "custom"; syncRange(key); if (["glassDepth","cardOpacity","glassDispersion","glassSaturation","glassContrast","glassTintOpacity"].includes(key)) { markPresetCustom(); markSmartManual(); } if (["backgroundScale","backgroundX","backgroundY","backgroundOpacity"].includes(key)) invalidateSmartCache(); scheduleRender(); queuePersist(); }; range.addEventListener("pointerdown", beginInteraction); range.addEventListener("input", e => set(e.target.value)); range.addEventListener("change", endInteraction); number.addEventListener("focus", beginInteraction); number.addEventListener("input", e => set(e.target.value, true)); number.addEventListener("change", endInteraction); reset.addEventListener("click", () => { beginInteraction(); set(DEFAULTS[key]); endInteraction(); }); return wrap; }
 function setupRanges() { Object.entries(RANGE_GROUPS).forEach(([group,keys]) => { const target = $(`${group}RangeControls`); if (!target) return; target.innerHTML = ""; keys.forEach(k => target.append(createRange(k))); }); }
 function syncRange(key) { [$(key), $(`${key}Number`)].forEach(el => { if (el) el.value = Number.isFinite(Number(state[key])) ? Number(state[key]).toFixed(RANGE_CONFIG[key]?.[2] < 1 ? 2 : 0).replace(/\.00$/, "") : state[key]; }); }
-function syncUi() { normalizeState(); Object.keys(RANGE_CONFIG).forEach(syncRange); ["mainTitle","subTitle","description","fontFamily","titleFontFamily","bodyFontFamily","customFontScope","logoStyle","accentColor","textColor","glassTintColor","cardHeightMode","dividerMode","cardPositionMode","layoutDensityMode"].forEach(key => { if ($(key)) $(key).value = state[key]; }); if ($("showSubtitleMarker")) $("showSubtitleMarker").value = String(state.showSubtitleMarker); if ($("glassPresetLabel")) $("glassPresetLabel").textContent = state.glassPreset === "custom" ? `${MATERIAL_PRESETS[currentMaterialBase()].label} · 自定义` : MATERIAL_PRESETS[currentMaterialBase()].label; if ($("smartSummary")) $("smartSummary").textContent = state.smartSummary || ""; renderGlassPresets(); renderLayoutPresets(); renderThemeChoices(); }
+function syncUi() { normalizeState(); Object.keys(RANGE_CONFIG).forEach(syncRange); ["mainTitle","subTitle","description","fontFamily","titleFontFamily","bodyFontFamily","customFontScope","logoStyle","accentColor","textColor","glassTintColor","cardHeightMode","dividerMode","cardPositionMode","layoutDensityMode","logoCropMode"].forEach(key => { if ($(key)) $(key).value = state[key]; }); if ($("showSubtitleMarker")) $("showSubtitleMarker").value = String(state.showSubtitleMarker); if ($("logoContainerSize")) { const wrap = $("logoContainerSize").closest("label"); if (wrap) wrap.hidden = state.logoStyle !== "glass"; } if ($("glassPresetLabel")) $("glassPresetLabel").textContent = state.glassPreset === "custom" ? `${MATERIAL_PRESETS[currentMaterialBase()].label} · 自定义` : MATERIAL_PRESETS[currentMaterialBase()].label; if ($("smartSummary")) $("smartSummary").textContent = state.smartSummary || ""; renderGlassPresets(); renderLayoutPresets(); renderThemeChoices(); }
 function queuePersist() { clearTimeout(persistTimer); persistTimer = setTimeout(persist, 220); }
 function materialSwatchStyle(p) { return `--m-tint:${p.tintColor};--m-tint2:${p.secondaryTintColor};--m-border:${p.borderColor};--m-ref-a:${p.reflectionAColor};--m-ref-b:${p.reflectionBColor};--m-alpha:${p.tintOpacity};--m-b:${p.borderOpacity};`; }
 function renderGlassPresets() { const host = $("glassPresets"); if (!host) return; host.innerHTML = MATERIAL_ORDER.map(key => { const p = MATERIAL_PRESETS[key], active = currentMaterialBase() === key; return `<button class="glass-preset material-${key} ${active ? "active" : ""}" type="button" data-preset="${key}" aria-pressed="${active}" style="${materialSwatchStyle(p)}"><span class="preset-swatch" aria-hidden="true"><i></i><b></b></span><span>${p.label}</span><small>${p.description}</small></button>`; }).join(""); host.querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => { beginInteraction(); applyMaterial(btn.dataset.preset, "manual"); syncUi(); scheduleRender(); endInteraction(); })); }
@@ -360,25 +761,107 @@ function updateAssetCards() { const pairs=[ ["background","backgroundThumb","bac
 function validateImage(file) { if (!file) return ""; if (!file.type.startsWith("image/")) return "请选择图片文件。"; if (file.size > MAX_FILE_SIZE) return "图片超过 20MB，请压缩后重试。"; return ""; }
 async function decodeImageBlob(blob) { if (window.createImageBitmap) { try { return await createImageBitmap(blob, { imageOrientation: "from-image" }); } catch (_) {} } const url = URL.createObjectURL(blob); try { const img = new Image(); img.decoding = "async"; img.src = url; await img.decode(); return img; } finally { setTimeout(() => URL.revokeObjectURL(url), 5000); } }
 async function downsampleImage(file, kind) { const decoded = await decodeImageBlob(file); const sourceWidth = decoded.width, sourceHeight = decoded.height; const edge = Math.max(sourceWidth, sourceHeight); const ratio = Math.min(1, MAX_WORK_IMAGE_EDGE / edge); const targetWidth = Math.max(1, Math.round(sourceWidth * ratio)); const targetHeight = Math.max(1, Math.round(sourceHeight * ratio)); const canvas = document.createElement("canvas"), ctx = canvas.getContext("2d"); canvas.width = targetWidth; canvas.height = targetHeight; if (!ctx) throw new Error("浏览器无法处理图片画布"); ctx.drawImage(decoded, 0, 0, targetWidth, targetHeight); if (decoded.close) decoded.close(); const type = file.type === "image/png" && kind === "logo" ? "image/png" : "image/jpeg"; const quality = type === "image/jpeg" ? .92 : undefined; const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error("图片转换失败")), type, quality)); canvas.width = canvas.height = 0; return await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = reject; r.readAsDataURL(blob); }); }
-async function readAsset(file, kind) { const error=$(kind==="background"?"backgroundError":"logoError"), msg=validateImage(file); if (error) error.textContent=msg; if(msg)return; try { const url=await downsampleImage(file, kind); beginInteraction(); state.editorTarget=kind; state[kind]=url; if(kind==="background"){extractThemeColors(url);state.backgroundScale=100;state.backgroundX=0;state.backgroundY=0;invalidateSmartCache();} else {state.logoScale=120;state.logoX=0;state.logoY=0;} syncUi(); scheduleRender(); endInteraction(); } catch (_) { const heic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name); if (error) error.textContent = heic ? "当前浏览器无法读取该照片格式，请在照片中导出为 JPEG/PNG 后重试。" : "图片无法解码，请更换一个有效文件。"; } }
+async function readAsset(file, kind) { const error=$(kind==="background"?"backgroundError":"logoError"), msg=validateImage(file); if (error) error.textContent=msg; if(msg)return; try { const url=await downsampleImage(file, kind); beginInteraction(); state.editorTarget=kind; state[kind]=url; state.demoId=""; if(kind==="background"){extractThemeColors(url);state.backgroundScale=100;state.backgroundX=0;state.backgroundY=0;invalidateSmartCache();} else {state.logoScale=DEFAULTS.logoScale;state.logoX=0;state.logoY=0;logoCropCache=null;logoAspectCache={src:"",aspect:1};await refreshLogoAspect();await refreshLogoCropBounds();} syncUi(); scheduleRender(); endInteraction(); } catch (_) { const heic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name); if (error) error.textContent = heic ? "当前浏览器无法读取该照片格式，请在照片中导出为 JPEG/PNG 后重试。" : "图片无法解码，请更换一个有效文件。"; } }
 function setupUpload(kind) { const card=$(kind==="background"?"backgroundUploadCard":"logoUploadCard"), input=$(kind==="background"?"backgroundInput":"logoInput"), replace=$(kind==="background"?"replaceBackground":"replaceLogo"), clear=$(kind==="background"?"clearBackground":"clearLogo"); const trigger=()=>{state.editorTarget=kind; input.click();}; card.addEventListener("click",trigger); card.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trigger();}}); replace.addEventListener("click",trigger); input.addEventListener("change",e=>readAsset(e.target.files[0],kind)); ["dragenter","dragover"].forEach(t=>card.addEventListener(t,e=>{e.preventDefault();state.editorTarget=kind;card.classList.add("drag-over");})); ["dragleave","drop"].forEach(t=>card.addEventListener(t,e=>{e.preventDefault();card.classList.remove("drag-over");})); card.addEventListener("drop",e=>readAsset(e.dataTransfer.files[0],kind)); clear.addEventListener("click",()=>{beginInteraction();state.editorTarget=kind;state[kind]="";if(kind==="background"){state.themes=[];state.selectedTheme=-1;invalidateSmartCache();}input.value="";syncUi();scheduleRender();endInteraction();}); }
 async function registerCustomFont(show = true) { if (!state.customFontData || !state.customFontName) return; if (!window.FontFace || !document.fonts) { showToast("当前浏览器不支持可靠加载自定义字体。", "error", true); return; } const face=new FontFace(state.customFontName,`url(${state.customFontData})`); try { await face.load(); document.fonts.add(face); await document.fonts.ready; if(show)showToast("自定义字体已加载"); } catch (_) { if ($("fontStatus")) $("fontStatus").textContent="字体加载失败"; showToast("字体加载失败，无法可靠导出。","error",true); } }
 function setupFontUpload() { $("fontInput").addEventListener("change", async e=>{const file=e.target.files[0];if(!file)return; if(file.size>MAX_FILE_SIZE){$("fontStatus").textContent="字体超过 20MB";return;} const ext=(file.name.split(".").pop()||"ttf").toLowerCase(); const fmt={ttf:"truetype",otf:"opentype",woff:"woff",woff2:"woff2"}[ext]; if(!fmt){$("fontStatus").textContent="不支持该字体格式";return;} const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(file);}); beginInteraction();state.customFontName=`UserFont${Date.now()}`;state.customFontData=data;state.customFontFormat=fmt;state.customFontFileName=file.name;state.customFontScope=state.customFontScope||"title";await registerCustomFont();syncUi();scheduleRender();endInteraction();}); }
 
-function renderSelection(card, logoBox) { const layer=$("selectionLayer"), target=state.editorTarget; if (!layer) return; if (!target) { layer.innerHTML=""; return; } const host=$("canvasHost"), hostRect=host.getBoundingClientRect(), svgRect=svg.getBoundingClientRect(); const chosen=target==="logo"?logoBox:(target==="card"?card:{x:0,y:0,width:state.width,height:state.height}); const left=(svgRect.left-hostRect.left)+chosen.x/state.width*svgRect.width, top=(svgRect.top-hostRect.top)+chosen.y/state.height*svgRect.height, w=chosen.width/state.width*svgRect.width,h=chosen.height/state.height*svgRect.height; const label = target==="logo"?"Logo":(target==="card"?"卡片":"底图"); layer.innerHTML=`<div class="selection-box" data-label="${label}" style="left:${left}px;top:${top}px;width:${w}px;height:${h}px"></div>`; }
+function renderSelection(card, logoBox) { const layer=$("selectionLayer"), target=state.editorTarget; if (!layer) return; if (!target) { layer.innerHTML=""; return; } const host=$("canvasHost"), hostRect=host.getBoundingClientRect(), svgRect=svg.getBoundingClientRect(); const chosen=target==="logo"?logoContentGeometry(logoBox).content:(target==="card"?card:{x:0,y:0,width:state.width,height:state.height}); const left=(svgRect.left-hostRect.left)+chosen.x/state.width*svgRect.width, top=(svgRect.top-hostRect.top)+chosen.y/state.height*svgRect.height, w=chosen.width/state.width*svgRect.width,h=chosen.height/state.height*svgRect.height; const label = target==="logo"?"Logo":(target==="card"?"卡片":"底图"); layer.innerHTML=`<div class="selection-box" data-label="${label}" style="left:${left}px;top:${top}px;width:${w}px;height:${h}px"></div>`; }
 function logicalPoint(event) { const rect=svg.getBoundingClientRect(); return { x:(event.clientX-rect.left)/rect.width*state.width, y:(event.clientY-rect.top)/rect.height*state.height }; }
-function hitLogo(p, logoBox) { return p.x>=logoBox.x&&p.x<=logoBox.x+logoBox.width&&p.y>=logoBox.y&&p.y<=logoBox.y+logoBox.height; }
+function hitLogo(p, logoBox) { const b = logoContentGeometry(logoBox).content; return p.x>=b.x&&p.x<=b.x+b.width&&p.y>=b.y&&p.y<=b.y+b.height; }
 function clearEditorTarget() { if (!state.editorTarget) return; state.editorTarget=null; scheduleRender(); }
 function assetArea(asset) { if (asset === "logo") return layoutGeometry().logoBox; if (asset === "card") return layoutGeometry().card; return { x:0, y:0, width:state.width, height:state.height }; }
-function dragAsset(asset, start, point, original) { const dx=point.x-start.x, dy=point.y-start.y; if(asset==="card"){ state.cardPositionMode="custom"; state.cardX=clamp(original.x+dx,-160,160); state.cardY=clamp(original.y+dy,-120,120); syncRange("cardX"); syncRange("cardY"); scheduleRender(); return; } const scale=state[`${asset}Scale`], den=Math.max(.01,(scale/100-1)); state[`${asset}X`]=clamp(original.x+dx/(assetArea(asset).width*.5*den)*100,-100,100); state[`${asset}Y`]=clamp(original.y+dy/(assetArea(asset).height*.5*den)*100,-100,100); syncRange(`${asset}X`); syncRange(`${asset}Y`); if(asset==="background")invalidateSmartCache(); scheduleRender(); }
-function scaleAround(asset, center, oldScale, newScale, oldX, oldY) { if (asset === "card") { state.cardPositionMode = "custom"; state.cardScale = newScale; state.cardX = oldX; state.cardY = oldY; ["cardScale","cardX","cardY"].forEach(syncRange); scheduleRender(); return; } const area = assetArea(asset); const oldP = getImagePlacement(area, oldScale, oldX, oldY); const relX = (center.x - oldP.x) / oldP.width, relY = (center.y - oldP.y) / oldP.height; const baseWidth = area.width * (newScale / 100), baseHeight = area.height * (newScale / 100); const maxX = Math.max(.001, (baseWidth - area.width) / 2), maxY = Math.max(.001, (baseHeight - area.height) / 2); const desiredX = center.x - relX * baseWidth, desiredY = center.y - relY * baseHeight; state[`${asset}Scale`] = newScale; state[`${asset}X`] = clamp((desiredX - (area.x + (area.width - baseWidth) / 2)) / maxX * 100, -100, 100); state[`${asset}Y`] = clamp((desiredY - (area.y + (area.height - baseHeight) / 2)) / maxY * 100, -100, 100); ["Scale","X","Y"].forEach(k=>syncRange(`${asset}${k}`)); if(asset==="background")invalidateSmartCache(); scheduleRender(); }
+function dragAsset(asset, start, point, original) {
+  const dx = point.x - start.x, dy = point.y - start.y;
+  if (asset === "card") { state.cardPositionMode = "custom"; state.cardX = clamp(original.x + dx, -160, 160); state.cardY = clamp(original.y + dy, -120, 120); syncRange("cardX"); syncRange("cardY"); scheduleRender(); return; }
+  if (asset === "logo") {
+    // Logo offsets are percentages of a fixed pixel range around the content
+    // centre, so dragging stays linear no matter how large logoScale gets.
+    state.logoX = clamp(original.x + dx / LOGO_OFFSET_RANGE.x * 100, -100, 100);
+    state.logoY = clamp(original.y + dy / LOGO_OFFSET_RANGE.y * 100, -100, 100);
+    syncRange("logoX"); syncRange("logoY"); scheduleRender(); return;
+  }
+  const scale = state[`${asset}Scale`], den = Math.max(.01, (scale / 100 - 1));
+  state[`${asset}X`] = clamp(original.x + dx / (assetArea(asset).width * .5 * den) * 100, -100, 100);
+  state[`${asset}Y`] = clamp(original.y + dy / (assetArea(asset).height * .5 * den) * 100, -100, 100);
+  syncRange(`${asset}X`); syncRange(`${asset}Y`); if (asset === "background") invalidateSmartCache(); scheduleRender();
+}
+function scaleAround(asset, center, oldScale, newScale, oldX, oldY) {
+  if (asset === "card") { state.cardPositionMode = "custom"; state.cardScale = newScale; state.cardX = oldX; state.cardY = oldY; ["cardScale","cardX","cardY"].forEach(syncRange); scheduleRender(); return; }
+  if (asset === "logo") {
+    // Scale about the effective content centre; keep the pinch focus anchored so
+    // the badge neither jumps nor distorts while zooming.
+    const { logoBox } = layoutGeometry();
+    const prevScale = oldScale;
+    state.logoScale = clamp(newScale, 40, 600);
+    const baseCenterX = logoBox.x + logoBox.width / 2, baseCenterY = logoBox.y + logoBox.height / 2;
+    const prevCenterX = baseCenterX + oldX / 100 * LOGO_OFFSET_RANGE.x, prevCenterY = baseCenterY + oldY / 100 * LOGO_OFFSET_RANGE.y;
+    const factor = state.logoScale / Math.max(1, prevScale);
+    const nextCenterX = center.x - (center.x - prevCenterX) * factor;
+    const nextCenterY = center.y - (center.y - prevCenterY) * factor;
+    state.logoX = clamp((nextCenterX - baseCenterX) / LOGO_OFFSET_RANGE.x * 100, -100, 100);
+    state.logoY = clamp((nextCenterY - baseCenterY) / LOGO_OFFSET_RANGE.y * 100, -100, 100);
+    ["Scale","X","Y"].forEach(k => syncRange(`logo${k}`));
+    scheduleRender(); return;
+  }
+  const area = assetArea(asset); const oldP = getImagePlacement(area, oldScale, oldX, oldY);
+  const relX = (center.x - oldP.x) / oldP.width, relY = (center.y - oldP.y) / oldP.height;
+  const baseWidth = area.width * (newScale / 100), baseHeight = area.height * (newScale / 100);
+  const maxX = Math.max(.001, (baseWidth - area.width) / 2), maxY = Math.max(.001, (baseHeight - area.height) / 2);
+  const desiredX = center.x - relX * baseWidth, desiredY = center.y - relY * baseHeight;
+  state[`${asset}Scale`] = newScale;
+  state[`${asset}X`] = clamp((desiredX - (area.x + (area.width - baseWidth) / 2)) / maxX * 100, -100, 100);
+  state[`${asset}Y`] = clamp((desiredY - (area.y + (area.height - baseHeight) / 2)) / maxY * 100, -100, 100);
+  ["Scale","X","Y"].forEach(k=>syncRange(`${asset}${k}`)); if(asset==="background")invalidateSmartCache(); scheduleRender();
+}
 function pointerDistance(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);}
 function pointerCenter(a,b){ const rect=svg.getBoundingClientRect(); return { x:((a.clientX+b.clientX)/2-rect.left)/rect.width*state.width, y:((a.clientY+b.clientY)/2-rect.top)/rect.height*state.height }; }
 function endCanvasGesture(stage) { if (!gesture) return; gesture = null; activePointers.clear(); $("canvasHost").classList.remove("canvas-editing"); stage.classList.remove("canvas-editing"); endInteraction(); }
 function setupCanvasEditing() { const stage=$("previewStage"); if (window.PointerEvent) { stage.addEventListener("pointerdown",e=>{if(e.target!==svg && !svg.contains(e.target)){clearEditorTarget();return;} const p=logicalPoint(e),{card,logoBox}=layoutGeometry(); if(!gesture){state.editorTarget=hitLogo(p,logoBox)?"logo":(p.x>=card.x&&p.x<=card.x+card.width&&p.y>=card.y&&p.y<=card.y+card.height?"card":"background"); beginInteraction(); gesture={target:state.editorTarget,startPoint:p,original:state.editorTarget==="card"?{x:state.cardX,y:state.cardY,scale:state.cardScale}:{x:state[`${state.editorTarget}X`],y:state[`${state.editorTarget}Y`],scale:state[`${state.editorTarget}Scale`]}};} activePointers.set(e.pointerId,e); stage.setPointerCapture?.(e.pointerId); stage.classList.add("canvas-editing"); $("canvasHost").classList.add("canvas-editing"); renderSelection(card,logoBox); e.preventDefault();},{passive:false}); stage.addEventListener("pointermove",e=>{if(!gesture||!activePointers.has(e.pointerId))return; activePointers.set(e.pointerId,e); const points=[...activePointers.values()]; if(points.length>=2){ if(!gesture.pinchStart){ gesture.pinchStart={distance:pointerDistance(points[0],points[1]),scale:state[`${gesture.target}Scale`],x:state[`${gesture.target}X`],y:state[`${gesture.target}Y`]}; } const factor=pointerDistance(points[0],points[1])/Math.max(1,gesture.pinchStart.distance); const key=gesture.target==="card"?"cardScale":`${gesture.target}Scale`; const newScale=clamp(gesture.pinchStart.scale*factor,RANGE_CONFIG[key][0],RANGE_CONFIG[key][1]); scaleAround(gesture.target,pointerCenter(points[0],points[1]),gesture.pinchStart.scale,newScale,gesture.pinchStart.x,gesture.pinchStart.y); } else { gesture.pinchStart=null; dragAsset(gesture.target,gesture.startPoint,logicalPoint(e),gesture.original); } e.preventDefault();},{passive:false}); const finish=e=>{ if(activePointers.has(e.pointerId)){ activePointers.delete(e.pointerId); try{stage.releasePointerCapture?.(e.pointerId);}catch(_){} } if(activePointers.size===1 && gesture){ const remain=[...activePointers.values()][0]; gesture.startPoint=logicalPoint(remain); gesture.original={x:state[`${gesture.target}X`],y:state[`${gesture.target}Y`],scale:state[`${gesture.target}Scale`]}; gesture.pinchStart=null; return; } if(activePointers.size===0) endCanvasGesture(stage); }; stage.addEventListener("pointerup",finish); stage.addEventListener("pointercancel",finish); } else { setupTouchFallback(stage); }
   stage.addEventListener("wheel",e=>{const key=state.editorTarget;if(!key)return;beginInteraction();const scaleKey=key==="card"?"cardScale":`${key}Scale`;state[scaleKey]=clamp(state[scaleKey]+(e.deltaY<0?4:-4),RANGE_CONFIG[scaleKey][0],RANGE_CONFIG[scaleKey][1]);if(key==="card")state.cardPositionMode="custom";syncRange(scaleKey);if(key==="background")invalidateSmartCache();scheduleRender();endInteraction();e.preventDefault();},{passive:false}); window.addEventListener("resize",queueLayoutUpdate); window.addEventListener("orientationchange",()=>{endCanvasGesture(stage);queueLayoutUpdate();}); }
 function setupTouchFallback(stage) { let touchState=null; stage.addEventListener("touchstart",e=>{if(e.target!==svg && !svg.contains(e.target))return; const t=e.touches[0], p=logicalPoint(t), {logoBox}=layoutGeometry(); state.editorTarget=hitLogo(p,logoBox)?"logo":"background"; beginInteraction(); touchState={target:state.editorTarget,start:p,original:{x:state[`${state.editorTarget}X`],y:state[`${state.editorTarget}Y`],scale:state[`${state.editorTarget}Scale`]}}; stage.classList.add("canvas-editing");}, {passive:true}); stage.addEventListener("touchmove",e=>{if(!touchState)return; if(e.touches.length===1){dragAsset(touchState.target,touchState.start,logicalPoint(e.touches[0]),touchState.original);} else if(e.touches.length>=2){const a=e.touches[0],b=e.touches[1]; if(!touchState.pinchStart) touchState.pinchStart={distance:pointerDistance(a,b),scale:state[`${touchState.target}Scale`],x:state[`${touchState.target}X`],y:state[`${touchState.target}Y`]}; const touchScaleKey=touchState.target==="card"?"cardScale":`${touchState.target}Scale`; const newScale=clamp(touchState.pinchStart.scale*(pointerDistance(a,b)/Math.max(1,touchState.pinchStart.distance)),RANGE_CONFIG[touchScaleKey][0],RANGE_CONFIG[touchScaleKey][1]); scaleAround(touchState.target,pointerCenter(a,b),touchState.pinchStart.scale,newScale,touchState.pinchStart.x,touchState.pinchStart.y);} e.preventDefault();},{passive:false}); const end=()=>{if(!touchState)return;touchState=null;stage.classList.remove("canvas-editing");endInteraction();}; stage.addEventListener("touchend",end); stage.addEventListener("touchcancel",end); }
-function assetQuickActions() { document.querySelectorAll(".quick-actions button").forEach(btn=>btn.addEventListener("click",()=>{const asset=btn.closest(".quick-actions").dataset.asset,action=btn.dataset.action;beginInteraction();if(asset==="card"){ if(action==="center"){state.cardX=0;state.cardY=0;state.cardPositionMode="custom";} if(action==="smart"){state.cardX=0;state.cardY=0;state.cardPositionMode="auto";} if(action==="auto"){applySmartLayoutForContent();} if(action==="fixed"){state.cardHeightMode="fixed";state.cardHeight=layoutGeometry().card.height;} syncUi();scheduleRender();endInteraction();return;} state.editorTarget=asset;if(action==="fit")state[`${asset}Scale`]=100;if(action==="fill")state[`${asset}Scale`]=asset==="background"?130:145;if(action==="center"){state[`${asset}X`]=0;state[`${asset}Y`]=0;}if(action==="reset"){["Scale","X","Y"].forEach(k=>state[`${asset}${k}`]=DEFAULTS[`${asset}${k}`]);} if(asset==="background")invalidateSmartCache();["Scale","X","Y"].forEach(k=>syncRange(`${asset}${k}`));scheduleRender();endInteraction();})); }
+function assetQuickActions() {
+  document.querySelectorAll(".quick-actions button").forEach(btn => btn.addEventListener("click", async () => {
+    const asset = btn.closest(".quick-actions").dataset.asset, action = btn.dataset.action;
+    beginInteraction();
+    if (asset === "card") {
+      if (action === "center") { state.cardX = 0; state.cardY = 0; state.cardPositionMode = "custom"; }
+      if (action === "smart") { state.cardX = 0; state.cardY = 0; state.cardPositionMode = "auto"; }
+      if (action === "auto") applySmartLayoutForContent();
+      if (action === "fixed") { state.cardHeightMode = "fixed"; state.cardHeight = layoutGeometry().card.height; }
+      if (action === "text-center") { state.textOpticalOffsetY = 0; syncRange("textOpticalOffsetY"); }
+      if (action === "logo-center") { state.logoX = 0; state.logoY = 0; state.logoOpticalOffsetY = 0; ["logoX", "logoY", "logoOpticalOffsetY"].forEach(syncRange); }
+      syncUi(); scheduleRender(); endInteraction(); return;
+    }
+    if (asset === "logo") {
+      state.editorTarget = "logo";
+      const { card, logoBox } = layoutGeometry();
+      // Scale is expressed against the alpha-cropped content, so 100% == "fit".
+      if (action === "fit") state.logoScale = 100;
+      if (action === "fill") state.logoScale = 130;
+      if (action === "emphasize") {
+        // Target ~51% of card height for the effective badge content.
+        const geo = logoContentGeometry(logoBox);
+        const currentH = geo.content.height || 1;
+        const desired = card.height * .51;
+        state.logoScale = clamp(state.logoScale * (desired / currentH), 40, 600);
+      }
+      if (action === "original") { state.logoCropMode = "auto"; await refreshLogoCropBounds(); state.logoScale = 100; }
+      if (action === "center") { state.logoX = 0; state.logoY = 0; state.logoOpticalOffsetY = 0; syncRange("logoOpticalOffsetY"); }
+      if (action === "reset") { ["Scale", "X", "Y"].forEach(k => state[`logo${k}`] = DEFAULTS[`logo${k}`]); state.logoOpticalOffsetY = 0; state.logoCropMode = "auto"; await refreshLogoCropBounds(); }
+      ["Scale", "X", "Y"].forEach(k => syncRange(`logo${k}`));
+      syncUi(); scheduleRender(); endInteraction(); return;
+    }
+    state.editorTarget = asset;
+    if (action === "fit") state[`${asset}Scale`] = 100;
+    if (action === "fill") state[`${asset}Scale`] = 130;
+    if (action === "center") { state[`${asset}X`] = 0; state[`${asset}Y`] = 0; }
+    if (action === "reset") ["Scale", "X", "Y"].forEach(k => state[`${asset}${k}`] = DEFAULTS[`${asset}${k}`]);
+    if (asset === "background") invalidateSmartCache();
+    ["Scale", "X", "Y"].forEach(k => syncRange(`${asset}${k}`));
+    scheduleRender(); endInteraction();
+  }));
+}
 
 function rgbToHsl({ r, g, b }) { r/=255; g/=255; b/=255; const max=Math.max(r,g,b), min=Math.min(r,g,b); let h=0, s=0, l=(max+min)/2; if(max!==min){const d=max-min; s=l>.5?d/(2-max-min):d/(max+min); h=max===r?(g-b)/d+(g<b?6:0):max===g?(b-r)/d+2:(r-g)/d+4; h*=60;} return { h, s, l }; }
 function hslToRgb({ h, s, l }) { h=((h%360)+360)%360; const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2; let r=0,g=0,b=0; if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;} return { r:(r+m)*255, g:(g+m)*255, b:(b+m)*255 }; }
@@ -393,21 +876,151 @@ async function imageFromSource(src) { const img = new Image(); img.src = src; aw
 function drawBackgroundSample(ctx, img, w, h) { const p = getImagePlacement({x:0,y:0,width:state.width,height:state.height}, state.backgroundScale, state.backgroundX, state.backgroundY); ctx.drawImage(img, p.x / state.width * w, p.y / state.height * h, p.width / state.width * w, p.height / state.height * h); }
 function analyzePixels(data) { const lums=[], sats=[], bins=new Map(); let rSum=0,gSum=0,bSum=0,count=0,warm=0,cold=0; for(let i=0;i<data.length;i+=4){ if(data[i+3]<20)continue; const rgb={r:data[i],g:data[i+1],b:data[i+2]}, lum=luminance(rgb), hsl=rgbToHsl(rgb); lums.push(lum); sats.push(hsl.s); rSum+=rgb.r; gSum+=rgb.g; bSum+=rgb.b; count++; if(hsl.s>.22 && ((hsl.h>=SMART_THRESHOLDS.warmHueMin&&hsl.h<=SMART_THRESHOLDS.warmHueMax)||(hsl.h>=330))) warm++; if(hsl.s>.22 && ((hsl.h>=SMART_THRESHOLDS.cyanHueMin&&hsl.h<=SMART_THRESHOLDS.cyanHueMax)||(hsl.h>=SMART_THRESHOLDS.purpleHueMin&&hsl.h<=SMART_THRESHOLDS.purpleHueMax))) cold++; if(hsl.l>.12&&hsl.l<.90&&hsl.s>.08){const key=[Math.floor(rgb.r/32)*32,Math.floor(rgb.g/32)*32,Math.floor(rgb.b/32)*32].join(","); const v=bins.get(key)||{r:0,g:0,b:0,c:0}; v.r+=rgb.r;v.g+=rgb.g;v.b+=rgb.b;v.c++;bins.set(key,v);} } lums.sort((a,b)=>a-b); const avgLum=lums.reduce((a,b)=>a+b,0)/Math.max(1,lums.length), avgSat=sats.reduce((a,b)=>a+b,0)/Math.max(1,sats.length); const std=Math.sqrt(lums.reduce((a,b)=>a+Math.pow(b-avgLum,2),0)/Math.max(1,lums.length)); const colors=[...bins.values()].sort((a,b)=>b.c-a.c).slice(0,3).map(v=>({r:v.r/v.c,g:v.g/v.c,b:v.b/v.c})); return { avgLum, medianLum:lums[Math.floor(lums.length/2)]||0, stdLum:std, avgSat, warmRatio:warm/Math.max(1,count), coldRatio:cold/Math.max(1,count), texture:std+avgSat*.28, p10:lums[Math.floor(lums.length*.10)]||0, p90:lums[Math.floor(lums.length*.90)]||0, avgRgb:{r:rSum/Math.max(1,count),g:gSum/Math.max(1,count),b:bSum/Math.max(1,count)}, primary:colors[0]||{r:180,g:195,b:225}, secondary:colors[1]||colors[0]||{r:150,g:165,b:190}, tertiary:colors[2]||colors[1]||colors[0]||{r:150,g:165,b:190} }; }
 async function analyzeBackground() { const key = [state.background ? `${state.background.length}:${state.background.slice(0,64)}` : "default", state.backgroundScale, state.backgroundX, state.backgroundY, state.layoutPreset, state.cardHeightMode, state.cardX, state.cardY, state.cardScale].join("|"); if (smartCache?.key === key) return smartCache.result; const src = state.background || buildDefaultBackground(); const img = await imageFromSource(src); const w=128,h=90, canvas=document.createElement("canvas"), ctx=canvas.getContext("2d",{willReadFrequently:true}); canvas.width=w; canvas.height=h; drawBackgroundSample(ctx,img,w,h); const { card, logoBox } = layoutGeometry(), textArea = textAreaGeometry(card, logoBox); const sampleArea = area => { const x=clamp(Math.round(area.x/state.width*w),0,w-1), y=clamp(Math.round(area.y/state.height*h),0,h-1), aw=clamp(Math.round(area.width/state.width*w),1,w-x), ah=clamp(Math.round(area.height/state.height*h),1,h-y); return analyzePixels(ctx.getImageData(x,y,aw,ah).data); }; const result = { full: sampleArea({x:0,y:0,width:state.width,height:state.height}), card: sampleArea(card), text: sampleArea(textArea), logo: sampleArea(logoBox), usedDefault: !state.background }; canvas.width = canvas.height = 0; smartCache = { key, result }; return result; }
-async function analyzeLogoColors(materialKey, textRegion) { if (!state.logo) return { usable:false, candidates:[], reason:"未上传 Logo" }; try { const img = await imageFromSource(state.logo); const canvas=document.createElement("canvas"), ctx=canvas.getContext("2d",{willReadFrequently:true}); canvas.width=canvas.height=128; ctx.clearRect(0,0,128,128); ctx.drawImage(img,0,0,128,128); const data=ctx.getImageData(0,0,128,128).data, bins=new Map(); let valid=0; for(let i=0;i<data.length;i+=4){ if(data[i+3]<64)continue; valid++; const rgb={r:data[i],g:data[i+1],b:data[i+2]}, lch=rgbToOklch(rgb); if ((lch.L>.96 || lch.L<.07 || lch.C<.025) && valid>48) continue; const key=`${Math.round(lch.L*18)}:${Math.round(lch.C*18)}:${Math.round(lch.h/18)}`; const v=bins.get(key)||{r:0,g:0,b:0,count:0,L:0,C:0,hx:0,hy:0}; v.r+=rgb.r;v.g+=rgb.g;v.b+=rgb.b;v.count++;v.L+=lch.L;v.C+=lch.C;v.hx+=Math.cos(lch.h*Math.PI/180);v.hy+=Math.sin(lch.h*Math.PI/180);bins.set(key,v); } canvas.width=canvas.height=0; if(valid<20) return { usable:false, candidates:[], reason:"Logo 几乎透明" }; const material=MATERIAL_PRESETS[materialKey]||MATERIAL_PRESETS.standard, glassLum=expectedLumWithMaterial(textRegion, material); const candidates=[...bins.values()].map(v=>{const rgb={r:v.r/v.count,g:v.g/v.count,b:v.b/v.count}, lch=rgbToOklch(rgb), h=(Math.atan2(v.hy,v.hx)*180/Math.PI+360)%360; const adjusted=adjustAccentForContrast({L:v.L/v.count,C:v.C/v.count,h,rgb}, glassLum); return { rgb, hex:rgbToHex(rgb), adjusted, area:v.count/valid, L:v.L/v.count, C:v.C/v.count, h, contrast:contrastRatio(luminance(hexToRgb(adjusted)), glassLum) }; }).filter(c=>c.area>.006).sort((a,b)=>b.area-a.area).slice(0,6); candidates.forEach(c=>{ const areaScore=clamp(c.area/.42,0,1), chromaScore=1-Math.abs(clamp(c.C,.04,.20)-.12)/.10, contrastScore=clamp((c.contrast-2.2)/3.2,0,1), lightnessFitness=1-Math.abs(c.L-.72)/.34; const warmGold=(c.h>=58&&c.h<=105&&c.L>.46)?.10:0; const tooDarkRed=(c.h<35||c.h>345)&&c.L<.42?-.10:0; c.score=areaScore*.35+chromaScore*.25+contrastScore*.30+lightnessFitness*.10+warmGold+tooDarkRed; }); candidates.sort((a,b)=>b.score-a.score); const primary=candidates[0]; const secondary=candidates.find(c=>primary && hueDistance(c.h, primary.h)>25 && c.area>.01) || null; return { usable:!!primary, candidates, primaryAccent:primary?.adjusted, secondaryAccent:secondary?.adjusted || "", reason:primary?"强调色取自 Logo。":"Logo 色彩较弱" }; } catch (_) { return { usable:false, candidates:[], reason:"Logo 解码失败" }; } }
+/* Logo accent extraction. Samples only the effective (alpha-cropped) content so
+   large transparent margins cannot dilute the histogram, then scores candidates
+   with an explicit preference for luminous metallic hues (gold/champagne) over
+   large but dark blocks (deep red), which read better as an accent on glass. */
+async function analyzeLogoColors(materialKey, textRegion) {
+  if (!state.logo) return { usable: false, candidates: [], reason: "未上传 Logo" };
+  try {
+    const img = await imageFromSource(state.logo);
+    const crop = activeLogoCrop();
+    const sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
+    const sx = crop.cropX * sw, sy = crop.cropY * sh, sWidth = Math.max(1, crop.cropWidth * sw), sHeight = Math.max(1, crop.cropHeight * sh);
+    const size = 128;
+    const canvas = document.createElement("canvas"), ctx = canvas.getContext("2d", { willReadFrequently: true });
+    canvas.width = canvas.height = size;
+    ctx.clearRect(0, 0, size, size);
+    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, size, size);
+    const data = ctx.getImageData(0, 0, size, size).data, bins = new Map();
+    let valid = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 64) continue;
+      valid++;
+      const rgb = { r: data[i], g: data[i + 1], b: data[i + 2] }, lch = rgbToOklch(rgb);
+      if ((lch.L > .96 || lch.L < .07 || lch.C < .025) && valid > 48) continue;
+      const key = `${Math.round(lch.L * 18)}:${Math.round(lch.C * 18)}:${Math.round(lch.h / 18)}`;
+      const v = bins.get(key) || { r: 0, g: 0, b: 0, count: 0, L: 0, C: 0, hx: 0, hy: 0 };
+      v.r += rgb.r; v.g += rgb.g; v.b += rgb.b; v.count++; v.L += lch.L; v.C += lch.C;
+      v.hx += Math.cos(lch.h * Math.PI / 180); v.hy += Math.sin(lch.h * Math.PI / 180);
+      bins.set(key, v);
+    }
+    canvas.width = canvas.height = 0;
+    if (valid < 20) return { usable: false, candidates: [], reason: "Logo 几乎透明" };
+    const material = MATERIAL_PRESETS[materialKey] || MATERIAL_PRESETS.standard, glassLum = expectedLumWithMaterial(textRegion, material);
+    const candidates = [...bins.values()].map(v => {
+      const rgb = { r: v.r / v.count, g: v.g / v.count, b: v.b / v.count }, lch = rgbToOklch(rgb);
+      const h = (Math.atan2(v.hy, v.hx) * 180 / Math.PI + 360) % 360;
+      const adjusted = adjustAccentForContrast({ L: v.L / v.count, C: v.C / v.count, h, rgb }, glassLum);
+      return { rgb, hex: rgbToHex(rgb), adjusted, area: v.count / valid, L: v.L / v.count, C: v.C / v.count, h, contrast: contrastRatio(luminance(hexToRgb(adjusted)), glassLum) };
+    }).filter(c => c.area > .006).sort((a, b) => b.area - a.area).slice(0, 8);
+    candidates.forEach(c => {
+      const areaScore = clamp(c.area / .42, 0, 1);
+      const chromaScore = 1 - Math.abs(clamp(c.C, .04, .20) - .12) / .10;
+      const contrastScore = clamp((c.contrast - 2.2) / 3.2, 0, 1);
+      const lightnessFitness = 1 - Math.abs(c.L - .72) / .34;
+      // Metallic warm hues (gold / champagne / brass) make the strongest accents.
+      const metallicGold = (c.h >= 55 && c.h <= 110 && c.L > .38) ? .26 : 0;
+      // Dark saturated reds stay available as a secondary reflection colour only.
+      const darkRedPenalty = ((c.h < 35 || c.h > 345) && c.L < .45) ? -.24 : 0;
+      c.score = areaScore * .24 + chromaScore * .22 + contrastScore * .32 + lightnessFitness * .12 + metallicGold + darkRedPenalty;
+    });
+    candidates.sort((a, b) => b.score - a.score);
+    const primary = candidates[0];
+    const secondary = candidates.find(c => primary && hueDistance(c.h, primary.h) > 25 && c.area > .01) || null;
+    return { usable: !!primary, candidates, primaryAccent: primary?.adjusted, secondaryAccent: secondary?.hex || "", reason: primary ? "强调色取自 Logo。" : "Logo 色彩较弱" };
+  } catch (_) { return { usable: false, candidates: [], reason: "Logo 解码失败" }; }
+}
 function expectedLumWithMaterial(region, material) { const mixed=mixRgb(region.avgRgb, hexToRgb(material.tintColor), material.tintOpacity); return luminance(mixed); }
 function expectedLum(region, materialKey) { return expectedLumWithMaterial(region, MATERIAL_PRESETS[materialKey] || MATERIAL_PRESETS.standard); }
 function bestTextColorForMaterial(region, material) { const bgLum = expectedLumWithMaterial(region, material); const candidates = ["#FFFFFF", "#F7F8FA", "#1D222B", "#111318"]; return candidates.map(color=>({color,ratio:contrastRatio(luminance(hexToRgb(color)), bgLum)})).sort((a,b)=>b.ratio-a.ratio)[0]; }
 function bestTextColor(region, materialKey) { return bestTextColorForMaterial(region, MATERIAL_PRESETS[materialKey] || MATERIAL_PRESETS.standard); }
-function adjustAccentForContrast(color, bgLum) { let lch = color.h !== undefined ? { L:color.L, C:color.C, h:color.h } : rgbToOklch(color.rgb || color); const originalHue = lch.h; lch.C = clamp(lch.C, SMART_THRESHOLDS.minAccentChroma, SMART_THRESHOLDS.maxAccentChroma); const preferLight = bgLum < .42; const minL = preferLight ? .66 : .28, maxL = preferLight ? SMART_THRESHOLDS.maxAccentLum : .58; let best = { hex: rgbToHex(oklchToRgb(lch)), ratio: 0 }; for (let i=0;i<22;i++) { const L = preferLight ? minL + i * (maxL - minL) / 21 : maxL - i * (maxL - minL) / 21; const rgb = oklchToRgb({ L, C:lch.C, h:originalHue }); const hex = rgbToHex(rgb), ratio = contrastRatio(luminance(hexToRgb(hex)), bgLum); if (ratio > best.ratio) best = { hex, ratio }; if (ratio >= SMART_THRESHOLDS.accentContrast) return hex; } return best.hex; }
+/* Pick an accent that keeps the source hue but lands in a comfortable lightness
+   band for the current glass. Previously this returned the FIRST value that met
+   the minimum contrast, which on dark glass produced muddy, under-lit accents
+   (dark brass instead of champagne gold). Now we score the whole ramp and
+   prefer the luminous band, only relaxing when contrast cannot be met. */
+function adjustAccentForContrast(color, bgLum) {
+  let lch = color.h !== undefined ? { L: color.L, C: color.C, h: color.h } : rgbToOklch(color.rgb || color);
+  const originalHue = lch.h;
+  const chroma = clamp(lch.C, SMART_THRESHOLDS.minAccentChroma, SMART_THRESHOLDS.maxAccentChroma);
+  const preferLight = bgLum < .42;
+  const minL = preferLight ? .60 : .24, maxL = preferLight ? .90 : .58;
+  const preferredL = preferLight ? .84 : .40;
+  const steps = 30;
+  let best = null, fallback = { hex: rgbToHex(oklchToRgb({ L: preferredL, C: chroma, h: originalHue })), ratio: 0 };
+  for (let i = 0; i <= steps; i++) {
+    const L = minL + i * (maxL - minL) / steps;
+    const hex = rgbToHex(oklchToRgb({ L, C: chroma, h: originalHue }));
+    const ratio = contrastRatio(luminance(hexToRgb(hex)), bgLum);
+    if (ratio > fallback.ratio) fallback = { hex, ratio };
+    if (ratio < SMART_THRESHOLDS.accentContrast) continue;
+    const score = -Math.abs(L - preferredL);
+    if (!best || score > best.score) best = { hex, ratio, score };
+  }
+  return best ? best.hex : fallback.hex;
+}
 function safeAccentFromBackground(analysis, material) { const bgLum=expectedLumWithMaterial(analysis.text, material); for (const c of [analysis.full.primary, analysis.full.secondary, analysis.card.primary, analysis.text.primary]) { const lch=rgbToOklch(c), hsl=rgbToHsl(c); if (hsl.s < .10 || lch.L < .12 || lch.L > .90) continue; return adjustAccentForContrast({ ...lch, rgb:c }, bgLum); } return material.recommendedAccentColor || "#9AA8BB"; }
-function chooseSmartMaterial(analysis) { const t=analysis.text, f=analysis.full, primaryHsl=rgbToHsl(f.primary); const warm = f.warmRatio > SMART_THRESHOLDS.warmDominance || (f.avgSat>.38 && primaryHsl.h>=SMART_THRESHOLDS.warmHueMin && primaryHsl.h<=SMART_THRESHOLDS.warmHueMax); const cool = f.coldRatio > SMART_THRESHOLDS.coldDominance; const complex = f.texture > SMART_THRESHOLDS.textureComplexity || t.stdLum > SMART_THRESHOLDS.complexStd; if (warm && f.avgSat > .34) return { key:"obsidian", confidence:"high", glass:{ saturation:.79, contrast:1.04, tintColor:"#0B1018", tintOpacity:.31 }, reason:"背景暖色饱和度较高，已使用中性烟熏玻璃。" }; if (t.medianLum > SMART_THRESHOLDS.veryBright || (f.avgLum>.62 && complex)) return { key:"obsidian", confidence:"high", glass:{ saturation:.82, contrast:1.04, tintColor:"#0B1018", tintOpacity:.33 }, reason:"文字区域较亮，已使用深色整体玻璃。" }; if (f.avgSat > SMART_THRESHOLDS.highSaturation || complex) return { key:"silver", confidence:"medium", glass:{ saturation:cool ? .90 : .76, contrast:1.03, tintColor:"#D8DEE6", tintOpacity:.24 }, reason:"底图色彩较复杂，已降低玻璃内部饱和度。" }; if (t.medianLum < SMART_THRESHOLDS.dark && f.avgSat < SMART_THRESHOLDS.lowSaturation) { const glacier = bestTextColor(t,"glacier"), standard = bestTextColor(t,"standard"); return glacier.ratio >= standard.ratio ? { key:"glacier", confidence:"medium", glass:{ saturation:.86, contrast:1.01, tintColor:"#F2F6FA", tintOpacity:.25 }, reason:"背景偏暗低饱和，已比较后使用浅色玻璃。" } : { key:"standard", confidence:"medium", glass:{ saturation:.96, contrast:1.03, tintColor:"#FFFFFF", tintOpacity:.12 }, reason:"背景偏暗，已使用克制标准材质。" }; } if (cool && f.avgSat > .22) return { key:"aurora", confidence:"medium", glass:{ saturation:.92, contrast:1.02, tintColor:"#F4F7FB", tintOpacity:.12 }, reason:"背景有冷色特征，已使用透明玻璃与局部冷反射。" }; return { key:"standard", confidence:"low", glass:{ saturation:.96, contrast:1.03, tintColor:"#FFFFFF", tintOpacity:.12 }, reason:"特征较弱，已应用稳妥的标准方案。" }; }
+function chooseSmartMaterial(analysis) {
+  const t = analysis.text, f = analysis.full, primaryHsl = rgbToHsl(f.primary);
+  const complex = f.texture > SMART_THRESHOLDS.textureComplexity || t.stdLum > SMART_THRESHOLDS.complexStd;
+  // Warm dominance is evaluated from BOTH the warm pixel ratio and hue of the
+  // dominant colour, so mid-saturation warm art (fire/sunset/lantern scenes)
+  // is still recognised instead of falling through to the generic branch.
+  const warmHue = primaryHsl.h >= SMART_THRESHOLDS.warmHueMin && primaryHsl.h <= SMART_THRESHOLDS.warmHueMax;
+  const warmRatio = f.warmRatio || 0;
+  const warmScore = warmRatio + (warmHue ? .12 : 0) + (f.avgSat > SMART_THRESHOLDS.warmSaturation ? .08 : 0);
+  const warm = warmScore >= SMART_THRESHOLDS.warmDominance && f.avgSat > .22 && warmRatio > .16;
+  const cool = f.coldRatio > SMART_THRESHOLDS.coldDominance;
+  // Strong local highlights over a dark base need an opaque smoky glass.
+  const highContrastWarm = warm && (t.stdLum > SMART_THRESHOLDS.warmHighlightStd || complex);
+  if (highContrastWarm) {
+    const tintOpacity = clamp(.30 + (f.avgSat - .30) * .20 + (t.stdLum - .12) * .18, .28, .36);
+    const saturation = clamp(.82 - (f.avgSat - .30) * .30, .74, .84);
+    return { key: "obsidian", confidence: "high", glass: { saturation: Number(saturation.toFixed(2)), contrast: 1.03, tintColor: "#0B1018", tintOpacity: Number(tintOpacity.toFixed(2)) }, reason: "背景暖色较强，已降低玻璃饱和度；强调色取自 Logo 金色。" };
+  }
+  if (warm && f.avgSat > .34) return { key: "obsidian", confidence: "high", glass: { saturation: .79, contrast: 1.04, tintColor: "#0B1018", tintOpacity: .31 }, reason: "背景暖色饱和度较高，已使用中性烟熏玻璃。" };
+  if (t.medianLum > SMART_THRESHOLDS.veryBright || (f.avgLum > .62 && complex)) return { key: "obsidian", confidence: "high", glass: { saturation: .82, contrast: 1.04, tintColor: "#0B1018", tintOpacity: .33 }, reason: "文字区域较亮，已使用深色整体玻璃。" };
+  if (f.avgSat > SMART_THRESHOLDS.highSaturation || complex) return { key: "silver", confidence: "medium", glass: { saturation: cool ? .90 : .76, contrast: 1.03, tintColor: "#D8DEE6", tintOpacity: .24 }, reason: "底图色彩较复杂，已降低玻璃内部饱和度。" };
+  if (t.medianLum < SMART_THRESHOLDS.dark && f.avgSat < SMART_THRESHOLDS.lowSaturation) { const glacier = bestTextColor(t, "glacier"), standard = bestTextColor(t, "standard"); return glacier.ratio >= standard.ratio ? { key: "glacier", confidence: "medium", glass: { saturation: .86, contrast: 1.01, tintColor: "#F2F6FA", tintOpacity: .25 }, reason: "背景偏暗低饱和，已比较后使用浅色玻璃。" } : { key: "standard", confidence: "medium", glass: { saturation: .96, contrast: 1.03, tintColor: "#FFFFFF", tintOpacity: .12 }, reason: "背景偏暗，已使用克制标准材质。" }; }
+  if (cool && f.avgSat > .22) return { key: "aurora", confidence: "medium", glass: { saturation: .92, contrast: 1.02, tintColor: "#F4F7FB", tintOpacity: .12 }, reason: "背景有冷色特征，已使用透明玻璃与局部冷反射。" };
+  return { key: "standard", confidence: "low", glass: { saturation: .96, contrast: 1.03, tintColor: "#FFFFFF", tintOpacity: .12 }, reason: "特征较弱，已应用稳妥方案。" };
+}
 function autoTextAndOpacity(analysis, material, lineCount) { const text = bestTextColorForMaterial(analysis.text, material); const isLightText = luminance(hexToRgb(text.color)) > .55; const descOpacity = lineCount <= 1 ? .80 : .76; return { textColor:text.color, titleOpacity:.96, descOpacity, titleShadow:isLightText ? .14 : .04, descShadow:isLightText ? .11 : .04, ratio:text.ratio }; }
-function applySmartLayoutForContent() { state.cardHeightMode = "auto"; state.layoutDensityMode = "auto"; state.dividerMode = state.dividerMode || "auto"; const metrics = computeSystemAutoLayout(); state.cardHeight = metrics.height; state.titleRuleGap = metrics.titleRuleGap; state.ruleDescGap = metrics.ruleDescGap; state.descLineGap = metrics.descLineGap; state.dividerWidth = metrics.dividerWidth; state.logoOpticalOffsetY = metrics.logoOffset; state.cardY = 0; state.cardPositionMode = "auto"; }
-async function smartFitBackground() { if (smartBusy) return; const btn=$("smartFit"); smartBusy=true; btn.disabled=true; btn.dataset.label=btn.textContent; const steps=["正在分析 Logo 配色","正在分析背景材质","正在检查文字对比度","正在调整卡片布局"]; let step=0; const advance=()=>{btn.textContent=steps[Math.min(step++,steps.length-1)]; if($("smartSummary"))$("smartSummary").textContent=btn.textContent;}; try { beginInteraction(); advance(); const analysis = await analyzeBackground(); advance(); const chosen = chooseSmartMaterial(analysis); suppressSmartManual = true; applyMaterial(chosen.key, "smart"); state.glassSaturation = chosen.glass.saturation; state.glassContrast = chosen.glass.contrast; state.glassTintColor = chosen.glass.tintColor; state.glassTintOpacity = chosen.glass.tintOpacity; advance(); const material = { ...MATERIAL_PRESETS[chosen.key], saturation:state.glassSaturation, contrast:state.glassContrast, tintColor:state.glassTintColor, tintOpacity:state.glassTintOpacity }; const logoAnalysis = await analyzeLogoColors(chosen.key, analysis.text); const textPlan = autoTextAndOpacity(analysis, material, estimateDescriptionLineCount()); state.textColor = textPlan.textColor; state.titleOpacity = textPlan.titleOpacity; state.descOpacity = textPlan.descOpacity; state.titleShadowOpacity = textPlan.titleShadow; state.descShadowOpacity = textPlan.descShadow; state.primaryAccent = logoAnalysis.usable ? logoAnalysis.primaryAccent : safeAccentFromBackground(analysis, material); state.secondaryAccent = logoAnalysis.usable ? logoAnalysis.secondaryAccent : ""; state.accentColor = state.primaryAccent || material.recommendedAccentColor || "#9AA8BB"; state.subtitleOpacity = chosen.key === "obsidian" ? .88 : .82; advance(); applySmartLayoutForContent(); state.smartConfidence = chosen.confidence;
-    const accentLabel = logoAnalysis.usable ? "香槟金强调色" : "安全强调色";
+function applySmartLayoutForContent() {
+  state.cardHeightMode = "auto"; state.layoutDensityMode = "auto";
+  state.dividerMode = state.dividerMode || "auto";
+  const metrics = computeSystemAutoLayout();
+  state.cardHeight = metrics.height;
+  state.subtitleTitleVisualGap = metrics.subtitleTitleVisualGap;
+  state.titleDividerVisualGap = metrics.titleDividerVisualGap;
+  state.dividerDescriptionVisualGap = metrics.dividerDescriptionVisualGap;
+  state.descriptionLineBaselineGap = metrics.descriptionLineBaselineGap;
+  state.dividerWidth = metrics.dividerWidth;
+  state.textOpticalOffsetY = metrics.textOffset;
+  state.logoOpticalOffsetY = metrics.logoOffset;
+  state.logoContainerSize = metrics.logoContainerSize;
+  state.cardX = 0; state.cardY = 0; state.cardPositionMode = "auto";
+}
+/* Human-readable accent name derived from the measured hue, never from a filename. */
+function describeAccent(hex) {
+  const hsl = rgbToHsl(hexToRgb(hex)), l = luminance(hexToRgb(hex));
+  if (hsl.s < .12) return l > .5 ? "银白" : "石墨";
+  const h = hsl.h;
+  if (h >= 40 && h <= 70) return l > .45 ? "香槟金" : "古铜";
+  if (h > 70 && h <= 105) return "橄榄金";
+  if (h >= 20 && h < 40) return "琥珀";
+  if (h < 20 || h > 345) return "赤红";
+  if (h >= 165 && h <= 205) return "青蓝";
+  if (h > 205 && h <= 250) return "钢蓝";
+  if (h > 250 && h <= 300) return "紫罗兰";
+  return "彩色";
+}
+async function smartFitBackground() { if (smartBusy) return; const btn=$("smartFit"); smartBusy=true; btn.disabled=true; btn.dataset.label=btn.textContent; const steps=["正在分析 Logo 配色","正在分析背景材质","正在检查文字对比度","正在调整卡片布局"]; let step=0; const advance=()=>{btn.textContent=steps[Math.min(step++,steps.length-1)]; if($("smartSummary"))$("smartSummary").textContent=btn.textContent;}; try { beginInteraction(); advance(); if (state.logo && state.logoCropMode === "auto") await refreshLogoCropBounds(); const analysis = await analyzeBackground(); advance(); const chosen = chooseSmartMaterial(analysis); suppressSmartManual = true; applyMaterial(chosen.key, "smart"); state.glassSaturation = chosen.glass.saturation; state.glassContrast = chosen.glass.contrast; state.glassTintColor = chosen.glass.tintColor; state.glassTintOpacity = chosen.glass.tintOpacity; advance(); const material = { ...MATERIAL_PRESETS[chosen.key], saturation:state.glassSaturation, contrast:state.glassContrast, tintColor:state.glassTintColor, tintOpacity:state.glassTintOpacity }; const logoAnalysis = await analyzeLogoColors(chosen.key, analysis.text); const textPlan = autoTextAndOpacity(analysis, material, estimateDescriptionLineCount()); state.textColor = textPlan.textColor; state.titleOpacity = textPlan.titleOpacity; state.descOpacity = textPlan.descOpacity; state.titleShadowOpacity = textPlan.titleShadow; state.descShadowOpacity = textPlan.descShadow; state.primaryAccent = logoAnalysis.usable ? logoAnalysis.primaryAccent : safeAccentFromBackground(analysis, material); state.secondaryAccent = logoAnalysis.usable ? logoAnalysis.secondaryAccent : ""; state.accentColor = state.primaryAccent || material.recommendedAccentColor || "#9AA8BB"; state.subtitleOpacity = chosen.key === "obsidian" ? .88 : .82; advance(); applySmartLayoutForContent(); state.smartConfidence = chosen.confidence;
+    const accentLabel = logoAnalysis.usable ? `${describeAccent(state.accentColor)}强调色` : "安全强调色";
     const textLabel = luminance(hexToRgb(state.textColor)) > .55 ? "白色文字" : "深色文字";
     const cardLabel = state.layoutPreset === "system" && state.cardHeightMode === "auto" && state.cardHeight < 620 ? "紧凑卡片" : "自适应卡片";
-    state.smartSummary = `${MATERIAL_PRESETS[chosen.key].label} · ${accentLabel} · ${textLabel} · ${cardLabel} · ${chosen.confidence}`;
+    state.smartSummary = `已应用：${MATERIAL_PRESETS[chosen.key].label} · ${accentLabel} · ${cardLabel}`;
     const reason = `${chosen.reason}${logoAnalysis.usable ? "；强调色取自 Logo。" : analysis.usedDefault ? "；未检测到可靠 Logo，已根据默认背景生成推荐方案。" : "；Logo 色彩较弱，已从背景或材质生成推荐配色。"}`;
     if (analysis.usedDefault) showToast("已根据默认背景生成推荐方案");
     showToast(reason);
@@ -422,8 +1035,53 @@ async function detectSvgCanvasExport() { if (exportCapability !== null) return e
 function roundedRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 async function drawImageSource(ctx, src, area, scale, x, y, opacity=1) { const img = await imageFromSource(src); const p = getImagePlacement(area, scale, x, y); ctx.save(); ctx.globalAlpha = opacity; ctx.drawImage(img, p.x, p.y, p.width, p.height); ctx.restore(); }
 function drawLetterSpacedText(ctx, text, x, y, spacing, align="left") { if ("letterSpacing" in ctx) { ctx.letterSpacing = `${spacing}px`; ctx.textAlign = align; ctx.fillText(text,x,y); ctx.letterSpacing = "0px"; return; } const chars=graphemes(text); const widths=chars.map(ch=>ctx.measureText(ch).width); const total=widths.reduce((a,b)=>a+b,0)+Math.max(0,chars.length-1)*spacing; let start=align==="center"?x-total/2:x; chars.forEach((ch,i)=>{ctx.fillText(ch,start,y);start+=widths[i]+spacing;}); }
-async function drawCompatiblePng() { const { card, logoBox } = layoutGeometry(), material=currentMaterialToken(), typography=currentTypography(); const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d"); canvas.width=state.width; canvas.height=state.height; ctx.fillStyle="#070A12"; ctx.fillRect(0,0,state.width,state.height); await drawImageSource(ctx, state.background || buildDefaultBackground(), {x:0,y:0,width:state.width,height:state.height}, state.backgroundScale,state.backgroundX,state.backgroundY,state.backgroundOpacity/100); ctx.save(); ctx.shadowColor=material.shadowColor; ctx.shadowBlur=32; ctx.shadowOffsetY=22; ctx.globalAlpha=material.ambientShadowOpacity; roundedRect(ctx,card.x,card.y,card.width,card.height,card.radius); ctx.fill(); ctx.restore(); ctx.save(); roundedRect(ctx,card.x,card.y,card.width,card.height,card.radius); ctx.clip(); ctx.fillStyle=material.tintColor; ctx.globalAlpha=material.tintOpacity+.10; ctx.fillRect(card.x,card.y,card.width,card.height); ctx.globalAlpha=material.secondaryTintOpacity; ctx.fillStyle=material.secondaryTintColor; ctx.fillRect(card.x,card.y+card.height*.55,card.width,card.height*.45); ctx.restore(); ctx.globalAlpha=1; ctx.strokeStyle=material.borderColor; ctx.globalAlpha=material.borderOpacity; ctx.lineWidth=2.5; roundedRect(ctx,card.x,card.y,card.width,card.height,card.radius); ctx.stroke(); ctx.globalAlpha=1; await drawImageSource(ctx,state.logo||buildDefaultLogo(),logoBox,state.logoScale,state.logoX,state.logoY,1); drawCompatibleTypography(ctx, card, logoBox, typography); const raw=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("PNG 编码失败")),"image/png",1)); canvas.width=canvas.height=0; return withPngDpi(raw); }
-function drawCompatibleTypography(ctx, card, logoBox, typography) { ctx.save(); const drawRole=(role,token,text,x,y,size,align="left",filter=true)=>{ctx.font=`${token.fontWeight} ${size}px ${fontStackForRole(role)}`;ctx.fillStyle=roleColor(token);ctx.globalAlpha=token.opacity;ctx.textAlign=align; if(filter && token.shadowOpacity){ctx.shadowColor=token.shadowColor;ctx.shadowBlur=token.shadowBlur;ctx.shadowOffsetY=token.shadowOffsetY;ctx.globalAlpha=token.opacity;} else {ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetY=0;} drawLetterSpacedText(ctx,text,x,y,token.letterSpacing,align); ctx.shadowColor="transparent";}; if(state.layoutPreset==="certificate"){const centerX=card.x+card.width/2; const subY=logoBox.y+logoBox.height+70; const title=fitCertificateTitle(state.mainTitle,card.width-230,typography.title.fontSize,typography.title.minFontSize,typography.title.fontWeight,Math.max(1,typography.title.letterSpacing),fontStackForRole("title")); drawRole("subtitle",typography.subtitle,state.subTitle,centerX,subY,typography.subtitle.fontSize,"center",false); title.lines.forEach((line,i)=>drawRole("title",typography.title,line,centerX,subY+98+i*title.size*typography.title.lineHeight,title.size,"center",true)); const lineY=subY+98+(title.lines.length-1)*title.size*typography.title.lineHeight+title.size*.42+80; const desc=descriptionLines(3,Math.min(820,state.descriptionBoxWidth),typography.description.fontSize,typography.description.fontWeight,typography.description.letterSpacing,fontStackForRole("description")); desc.lines.forEach((line,i)=>drawRole("description",typography.description,line,centerX,lineY+78+textMetrics(typography.description.fontSize,typography.description.fontWeight,fontStackForRole("description")).ascent+i*state.descLineGap,typography.description.fontSize,"center",true));} else {const contentX=logoBox.x+logoBox.width+78, contentRight=card.x+card.width-110; const title=fitTitleSingle(state.mainTitle,contentRight-contentX,typography.title.fontSize,typography.title.minFontSize,typography.title.fontWeight,typography.title.letterSpacing,fontStackForRole("title")); const tm=textMetrics(title.size,typography.title.fontWeight,fontStackForRole("title")), sm=textMetrics(typography.subtitle.fontSize,typography.subtitle.fontWeight,fontStackForRole("subtitle")), dm=textMetrics(typography.description.fontSize,typography.description.fontWeight,fontStackForRole("description")); const titleY=logoBox.y+tm.ascent, subY=titleY-state.subtitleTitleGap, lineY=titleY+tm.descent+state.titleRuleGap, descY=lineY+state.ruleDescGap+dm.ascent; if(state.showSubtitleMarker){ctx.globalAlpha=.82;ctx.fillStyle=state.accentColor;ctx.beginPath();ctx.arc(contentX+4,subY-sm.ascent/2+sm.descent/2,4,0,Math.PI*2);ctx.fill();} drawRole("subtitle",typography.subtitle,state.subTitle,state.showSubtitleMarker?contentX+23:contentX,subY,typography.subtitle.fontSize,"left",false); drawRole("title",typography.title,state.mainTitle,contentX,titleY,title.size,"left",true); const desc=descriptionLines(3,Math.min(state.descriptionBoxWidth,contentRight-contentX),typography.description.fontSize,typography.description.fontWeight,typography.description.letterSpacing,fontStackForRole("description")); desc.lines.forEach((line,i)=>drawRole("description",typography.description,line,contentX,descY+i*state.descLineGap,typography.description.fontSize,"left",true));} ctx.restore(); }
+/* Canvas fallback must mirror the SVG geometry exactly: same crop, same
+   independent centring, same two-phase text layout. */
+async function drawLogoContent(ctx, logoBox, card) {
+  const src = state.logo || buildDefaultLogo();
+  const img = await imageFromSource(src);
+  const geo = logoContentGeometry(logoBox);
+  const crop = geo.crop;
+  const sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
+  ctx.save();
+  if (state.logoStyle === "glass") { roundedRect(ctx, logoBox.x, logoBox.y, logoBox.width, logoBox.height, state.layoutPreset === "certificate" ? 44 : 60); ctx.clip(); }
+  else { roundedRect(ctx, card.x, card.y, card.width, card.height, card.radius); ctx.clip(); }
+  ctx.drawImage(img, crop.cropX * sw, crop.cropY * sh, Math.max(1, crop.cropWidth * sw), Math.max(1, crop.cropHeight * sh), geo.content.x, geo.content.y, geo.content.width, geo.content.height);
+  ctx.restore();
+}
+async function drawCompatiblePng() { const { card, logoBox } = layoutGeometry(), material=currentMaterialToken(), typography=currentTypography(); const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d"); canvas.width=state.width; canvas.height=state.height; ctx.fillStyle="#070A12"; ctx.fillRect(0,0,state.width,state.height); await drawImageSource(ctx, state.background || buildDefaultBackground(), {x:0,y:0,width:state.width,height:state.height}, state.backgroundScale,state.backgroundX,state.backgroundY,state.backgroundOpacity/100); ctx.save(); ctx.shadowColor=material.shadowColor; ctx.shadowBlur=32; ctx.shadowOffsetY=22; ctx.globalAlpha=material.ambientShadowOpacity; roundedRect(ctx,card.x,card.y,card.width,card.height,card.radius); ctx.fill(); ctx.restore(); ctx.save(); roundedRect(ctx,card.x,card.y,card.width,card.height,card.radius); ctx.clip(); ctx.fillStyle=material.tintColor; ctx.globalAlpha=material.tintOpacity+.10; ctx.fillRect(card.x,card.y,card.width,card.height); ctx.globalAlpha=material.secondaryTintOpacity; ctx.fillStyle=material.secondaryTintColor; ctx.fillRect(card.x,card.y+card.height*.55,card.width,card.height*.45); ctx.restore(); ctx.globalAlpha=1; ctx.strokeStyle=material.borderColor; ctx.globalAlpha=material.borderOpacity; ctx.lineWidth=2.5; roundedRect(ctx,card.x,card.y,card.width,card.height,card.radius); ctx.stroke(); ctx.globalAlpha=1; await drawLogoContent(ctx, logoBox, card); drawCompatibleTypography(ctx, card, logoBox, typography); const raw=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("PNG 编码失败")),"image/png",1)); canvas.width=canvas.height=0; return withPngDpi(raw); }
+function drawCompatibleTypography(ctx, card, logoBox, typography) {
+  ctx.save();
+  const drawRole = (role, token, text, x, y, size, align = "left", filter = true) => { ctx.font = `${token.fontWeight} ${size}px ${fontStackForRole(role)}`; ctx.fillStyle = roleColor(token); ctx.globalAlpha = token.opacity; ctx.textAlign = align; if (filter && token.shadowOpacity) { ctx.shadowColor = token.shadowColor; ctx.shadowBlur = token.shadowBlur; ctx.shadowOffsetY = token.shadowOffsetY; ctx.globalAlpha = token.opacity; } else { ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0; } drawLetterSpacedText(ctx, text, x, y, token.letterSpacing, align); ctx.shadowColor = "transparent"; };
+  if (state.layoutPreset === "certificate") {
+    const centerX = card.x + card.width / 2; const subY = logoBox.y + logoBox.height + 70;
+    const title = fitCertificateTitle(state.mainTitle, card.width - 230, typography.title.fontSize, typography.title.minFontSize, typography.title.fontWeight, Math.max(1, typography.title.letterSpacing), fontStackForRole("title"));
+    drawRole("subtitle", typography.subtitle, state.subTitle, centerX, subY, typography.subtitle.fontSize, "center", false);
+    title.lines.forEach((line, i) => drawRole("title", typography.title, line, centerX, subY + 98 + i * title.size * typography.title.lineHeight, title.size, "center", true));
+    const lineY = subY + 98 + (title.lines.length - 1) * title.size * typography.title.lineHeight + title.size * .42 + 80;
+    const desc = descriptionLines(3, Math.min(820, state.descriptionBoxWidth), typography.description.fontSize, typography.description.fontWeight, typography.description.letterSpacing, fontStackForRole("description"));
+    desc.lines.forEach((line, i) => drawRole("description", typography.description, line, centerX, lineY + 78 + textMetrics(typography.description.fontSize, typography.description.fontWeight, fontStackForRole("description")).ascent + i * state.descriptionLineBaselineGap, typography.description.fontSize, "center", true));
+  } else {
+    // Reuse the exact same measured plan as the SVG renderer.
+    const plan = systemTextPlan(card, logoBox, typography);
+    const { contentX, contentRight, title, desc, showDivider, layout } = plan;
+    if (state.showSubtitleMarker && layout.hasSubtitle) { ctx.globalAlpha = .82; ctx.fillStyle = state.accentColor; ctx.beginPath(); ctx.arc(contentX + 4, layout.subtitleBaselineY - layout.subtitleInk.ascent / 2 + layout.subtitleInk.descent / 2, 4, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
+    if (layout.hasSubtitle) drawRole("subtitle", typography.subtitle, state.subTitle, state.showSubtitleMarker ? contentX + 23 : contentX, layout.subtitleBaselineY, typography.subtitle.fontSize, "left", false);
+    drawRole("title", typography.title, state.mainTitle, contentX, layout.titleBaselineY, title.size, "left", true);
+    if (showDivider) {
+      const w = Math.min(state.dividerWidth, contentRight - contentX);
+      const grad = ctx.createLinearGradient(contentX, 0, contentX + w, 0);
+      grad.addColorStop(0, hexToRgba(state.accentColor, .28));
+      grad.addColorStop(.5, hexToRgba(state.textColor, .12));
+      grad.addColorStop(1, hexToRgba(state.textColor, 0));
+      ctx.globalAlpha = 1; ctx.fillStyle = grad; ctx.fillRect(contentX, layout.dividerY - .5, w, 1);
+    }
+    const baselines = layout.descriptionBaselines || [];
+    desc.lines.forEach((line, i) => drawRole("description", typography.description, line, contentX, baselines[i], typography.description.fontSize, "left", true));
+  }
+  ctx.restore();
+}
+function hexToRgba(hex, alpha) { const { r, g, b } = hexToRgb(hex); return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${alpha})`; }
 async function preparePngBlob() { await ensureResources(); const highQuality = await detectSvgCanvasExport(); if (!highQuality) { showToast("已使用兼容模式导出，视觉效果可能存在轻微差异。"); return drawCompatiblePng(); } const markup=serializeSvg(),url=URL.createObjectURL(new Blob([markup],{type:"image/svg+xml;charset=utf-8"})); try { const img=new Image(); await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error("SVG 图片加载失败"));img.src=url;}); const canvas=document.createElement("canvas");canvas.width=state.width;canvas.height=state.height;const ctx=canvas.getContext("2d");if(!ctx)throw new Error("浏览器无法创建导出画布");ctx.drawImage(img,0,0);const raw=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("PNG 编码失败")),"image/png",1));canvas.width=canvas.height=0;return await withPngDpi(raw); } catch (_) { showToast("已使用兼容模式导出，视觉效果可能存在轻微差异。"); return drawCompatiblePng(); } finally { setTimeout(()=>URL.revokeObjectURL(url),5000); } }
 function canShareFile(file) { return !!(navigator.canShare && navigator.share && file && navigator.canShare({ files: [file] })); }
 async function saveOrShareBlob(blob, filename, mime, preferShare=false) { const file = new File([blob], filename, { type: mime }); lastExportFile = file; if ($("sheetShare")) $("sheetShare").disabled = !canShareFile(file); if (preferShare && canShareFile(file)) { try { await navigator.share({ files:[file], title: filename }); return; } catch (err) { if (err?.name === "AbortError" || err?.name === "NotAllowedError") return; } } if (!isCoarsePointer()) { download(filename, blob); return; } const url = URL.createObjectURL(blob); if (lastExportUrl) setTimeout(()=>URL.revokeObjectURL(lastExportUrl),8000); lastExportUrl = url; const a = document.createElement("a"); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove(); if (isLikelyMobileSafari()) { window.open(url, "_blank"); showToast("图片已生成，请长按图片保存，或使用系统分享按钮存储到‘文件’或‘照片’。", "success", true); } else showToast("文件已生成，如未自动保存请在新页面长按保存。", "success"); }
@@ -431,10 +1089,12 @@ async function downloadPng(options = {}) { if(exportBusy)return; exportBusy=true
 async function downloadSvg(options = {}) { try { await ensureResources(); const blob = new Blob([serializeSvg()],{type:"image/svg+xml;charset=utf-8"}); const filename = `${safeFilename(state.mainTitle)}-${state.width}x${state.height}-${timestamp()}.svg`; await saveOrShareBlob(blob, filename, "image/svg+xml", options.share); showToast("SVG 已导出。某些第三方应用可能不支持内嵌字体，跨应用展示建议使用 PNG。"); if($("sheetNote"))$("sheetNote").textContent="SVG 已生成，建议保存到‘文件’。"; } catch(err){showToast(`导出失败：${err.message||"未知错误"}`,"error",true);} }
 
 function resetAdjustments() { beginInteraction(); Object.keys(DEFAULTS).forEach(k=>{if(k!=="mainTitle"&&k!=="subTitle"&&k!=="description")state[k]=DEFAULTS[k];}); syncUi(); scheduleRender(); endInteraction(); }
-function applyExampleReset() { beginInteraction(); Object.assign(state,{...DEFAULTS,background:"",logo:"",customFontName:"",customFontData:"",customFontFormat:"",customFontFileName:"",themes:[],selectedTheme:-1,editorTarget:null}); syncUi(); scheduleRender(); endInteraction(); }
-function resetExample() { if(!confirm("恢复示例会清空已上传的底图、Logo 和自定义字体，是否继续？")) return; applyExampleReset(); }
+function applyExampleReset() { beginInteraction(); Object.assign(state,{...DEFAULTS,background:"",logo:"",customFontName:"",customFontData:"",customFontFormat:"",customFontFileName:"",themes:[],selectedTheme:-1,editorTarget:null,demoId:"",logoCropBounds:null}); logoCropCache=null; logoAspectCache={src:"",aspect:1}; invalidateSmartCache(); syncUi(); scheduleRender(); endInteraction(); }
+/* "恢复示例" reloads the built-in Mingye demo. */
+function resetExample() { if(!confirm("恢复示例会用暝夜示例替换当前的底图、Logo 与文案，此操作可以撤销。是否继续？")) return; loadDemoPreset("mingye"); }
+/* "新建空白作品" must never auto-reload the demo. */
 function newArtwork(){ if(!confirm("新建作品会清空当前素材与内容，是否继续？")) return; applyExampleReset(); showToast("已新建空白作品。"); }
-function bindBasicInputs(){["mainTitle","subTitle","description"].forEach(k=>$(k).addEventListener("focus",beginInteraction));["mainTitle","subTitle","description"].forEach(k=>$(k).addEventListener("input",e=>{state[k]=e.target.value;scheduleRender();queuePersist();}));["mainTitle","subTitle","description"].forEach(k=>$(k).addEventListener("change",endInteraction));["accentColor","textColor","glassTintColor"].forEach(k=>$(k)?.addEventListener("input",e=>{beginInteraction();state[k]=e.target.value;if(k==="accentColor")state.primaryAccent=e.target.value;state.selectedTheme=-1;markSmartManual();syncUi();scheduleRender();endInteraction();})); if ($("fontFamily")) $("fontFamily").addEventListener("change",e=>{beginInteraction();state.fontFamily=e.target.value;state.titleFontFamily=e.target.value;state.bodyFontFamily=e.target.value;state.typographyManuallyEdited=true;syncUi();scheduleRender();endInteraction();}); ["titleFontFamily","bodyFontFamily","customFontScope","showSubtitleMarker"].forEach(k=>$(k)?.addEventListener("change",e=>{beginInteraction();state[k]=k==="showSubtitleMarker"?e.target.value==="true":e.target.value;state.typographyManuallyEdited=true;syncUi();scheduleRender();endInteraction();}));["cardHeightMode","dividerMode","cardPositionMode","layoutDensityMode"].forEach(k=>$(k)?.addEventListener("change",e=>{beginInteraction();state[k]=e.target.value;if(k==="layoutDensityMode"&&state[k]==="auto")applySmartLayoutForContent();syncUi();scheduleRender();endInteraction();}));$("logoStyle").addEventListener("change",e=>{beginInteraction();state.logoStyle=e.target.value;scheduleRender();endInteraction();});}
+function bindBasicInputs(){["mainTitle","subTitle","description"].forEach(k=>$(k).addEventListener("focus",beginInteraction));["mainTitle","subTitle","description"].forEach(k=>$(k).addEventListener("input",e=>{state[k]=e.target.value;scheduleRender();queuePersist();}));["mainTitle","subTitle","description"].forEach(k=>$(k).addEventListener("change",endInteraction));["accentColor","textColor","glassTintColor"].forEach(k=>$(k)?.addEventListener("input",e=>{beginInteraction();state[k]=e.target.value;if(k==="accentColor")state.primaryAccent=e.target.value;state.selectedTheme=-1;markSmartManual();syncUi();scheduleRender();endInteraction();})); if ($("fontFamily")) $("fontFamily").addEventListener("change",e=>{beginInteraction();state.fontFamily=e.target.value;state.titleFontFamily=e.target.value;state.bodyFontFamily=e.target.value;state.typographyManuallyEdited=true;syncUi();scheduleRender();endInteraction();}); ["titleFontFamily","bodyFontFamily","customFontScope","showSubtitleMarker"].forEach(k=>$(k)?.addEventListener("change",e=>{beginInteraction();state[k]=k==="showSubtitleMarker"?e.target.value==="true":e.target.value;state.typographyManuallyEdited=true;syncUi();scheduleRender();endInteraction();}));["cardHeightMode","dividerMode","cardPositionMode","layoutDensityMode"].forEach(k=>$(k)?.addEventListener("change",e=>{beginInteraction();state[k]=e.target.value;if(k==="layoutDensityMode"&&state[k]==="auto")applySmartLayoutForContent();syncUi();scheduleRender();endInteraction();}));$("logoStyle").addEventListener("change",e=>{beginInteraction();state.logoStyle=e.target.value;syncUi();scheduleRender();endInteraction();});}
 function setupClipboard(){window.addEventListener("paste",e=>{const item=[...e.clipboardData.items].find(i=>i.type.startsWith("image/"));if(!item)return;readAsset(item.getAsFile(),state.editorTarget==="logo"?"logo":"background");showToast(`已粘贴到${state.editorTarget==="logo"?" Logo":"底图"}`);});}
 function setMobileTab(tab) { document.body.classList.toggle("mobile-preview",tab==="preview"); document.body.classList.toggle("mobile-editor",tab==="editor"); document.querySelectorAll("[data-mobile-tab]").forEach(x=>{const active=x.dataset.mobileTab===tab;x.classList.toggle("active",active);x.setAttribute("aria-selected",active?"true":"false");}); if ($("editorPanel")) $("editorPanel").hidden = false; if ($("previewPanel")) $("previewPanel").hidden = false; queueLayoutUpdate(); }
 function openExportSheet(){ const sheet=$("exportSheet"); if(!sheet) return; sheet.hidden=false; document.body.classList.add("sheet-open"); $("sheetExportPng")?.focus(); }
@@ -444,5 +1104,21 @@ function setupVisualViewport(){ const vv=window.visualViewport; if(!vv)return; c
 function queueLayoutUpdate(){ if(layoutQueued)return; layoutQueued=true; requestAnimationFrame(()=>{layoutQueued=false; scheduleRender();}); }
 function setupResizeObserver(){ if(window.ResizeObserver){new ResizeObserver(queueLayoutUpdate).observe($("previewStage"));} window.addEventListener("resize",queueLayoutUpdate); window.addEventListener("orientationchange",queueLayoutUpdate); window.visualViewport?.addEventListener("resize",queueLayoutUpdate); }
 function bindShortcuts(){window.addEventListener("keydown",e=>{if(!(e.metaKey||e.ctrlKey))return;if(e.key.toLowerCase()==="z"){e.preventDefault();e.shiftKey?redo():undo();}else if(e.key.toLowerCase()==="y"){e.preventDefault();redo();}});}
-function init(){setupRanges();setupUpload("background");setupUpload("logo");setupFontUpload();assetQuickActions();bindBasicInputs();setupCanvasEditing();setupClipboard();setupMobile();setupResizeObserver();bindShortcuts();$("downloadPng").addEventListener("click",()=>downloadPng());$("headerExportPng").addEventListener("click",()=>downloadPng());$("downloadSvg").addEventListener("click",()=>downloadSvg());$("undoButton").addEventListener("click",undo);$("redoButton").addEventListener("click",redo);$("resetAdjustments").addEventListener("click",resetAdjustments);$("resetDemo").addEventListener("click",resetExample);$("newArtwork").addEventListener("click",newArtwork);$("smartFit").addEventListener("click",smartFitBackground);syncUi();renderSvg();recordHistory();restorePersisted().then(()=>{syncUi();scheduleRender();recordHistory();});}
+function init(){setupRanges();setupUpload("background");setupUpload("logo");setupFontUpload();assetQuickActions();bindBasicInputs();setupCanvasEditing();setupClipboard();setupMobile();setupResizeObserver();bindShortcuts();$("downloadPng").addEventListener("click",()=>downloadPng());$("headerExportPng").addEventListener("click",()=>downloadPng());$("downloadSvg").addEventListener("click",()=>downloadSvg());$("undoButton").addEventListener("click",undo);$("redoButton").addEventListener("click",redo);$("resetAdjustments").addEventListener("click",resetAdjustments);$("resetDemo").addEventListener("click",resetExample);$("newArtwork").addEventListener("click",newArtwork);$("smartFit").addEventListener("click",smartFitBackground);
+  document.querySelectorAll("[data-load-demo]").forEach(btn=>btn.addEventListener("click",()=>loadDemoWithConfirm(btn.dataset.loadDemo)));
+  $("logoCropMode")?.addEventListener("change",async e=>{beginInteraction();state.logoCropMode=e.target.value;if(state.logoCropMode==="auto")await refreshLogoCropBounds();syncUi();scheduleRender();endInteraction();});
+  syncUi();renderSvg();recordHistory();
+  // First visit with no saved work loads the built-in demo; saved work always wins.
+  restorePersisted().then(async restored=>{
+    if(!restored && !hasSavedWork()) await loadDemoPreset("mingye",{silent:true});
+    syncUi();scheduleRender();recordHistory();
+  });
+}
+/* Layout introspection hook used by the automated layout regression tests.
+   Read-only: exposes the geometry/measurement functions so the two-phase
+   centring maths can be asserted without scraping rendered pixels. */
+window.__state = state;
+window.__debug = { layoutGeometry, systemTextPlan, currentTypography, logoContentGeometry, layoutSystemTypography, measureText, glyphMetrics, fontStackForRole, computeSystemAutoLayout, activeLogoCrop, loadDemoPreset, chooseSmartMaterial, analyzeBackground, analyzeLogoColors, describeAccent };
+window.__pngFallback = drawCompatiblePng;
+window.__cropBench = () => computeLogoCropBounds(state.logo);
 try { init(); } catch (err) { console.error(err); showToast("页面初始化失败，请刷新或更换浏览器重试。", "error", true); }

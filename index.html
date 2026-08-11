@@ -16,6 +16,7 @@
         <p class="header-copy">在一张卡片中完成底图、Logo 与成就文案的精细编排。</p>
       </div>
       <div class="header-actions">
+        <button class="button secondary" data-load-demo="mingye" type="button">载入暝夜示例</button>
         <button class="button secondary" id="newArtwork" type="button">新建作品</button>
         <button class="button primary" id="headerExportPng" type="button">导出 PNG</button>
       </div>
@@ -31,6 +32,10 @@
         <details open>
           <summary>内容</summary>
           <div class="settings-stack">
+            <div class="demo-loader">
+              <button class="button small secondary full-width" data-load-demo="mingye" type="button">载入暝夜示例</button>
+              <p class="hint-text">载入内置演示素材与文案，可用撤销恢复当前作品。</p>
+            </div>
             <label>主标题<input type="text" id="mainTitle" value="雕像也无法让她回心转意" maxlength="64" /></label>
             <p class="field-message" id="titleWarning" role="status"></p>
             <label>副标题<input type="text" id="subTitle" value="成就解锁" maxlength="64" /></label>
@@ -114,8 +119,18 @@
             </section>
             <div class="asset-actions"><button class="button small secondary" id="replaceLogo" type="button">替换</button><button class="button small tertiary" id="clearLogo" type="button">移除</button></div>
             <p class="field-message" id="logoError" role="alert"></p>
-            <label>Logo 样式<select id="logoStyle"><option value="floating">悬浮</option><option value="glass">玻璃底座</option></select></label>
-            <div class="quick-actions" data-asset="logo"><button type="button" data-action="fit">适应</button><button type="button" data-action="fill">填满</button><button type="button" data-action="center">居中</button><button type="button" data-action="reset">复原</button></div>
+            <div class="two-col">
+              <label>Logo 样式<select id="logoStyle"><option value="floating">悬浮</option><option value="glass">玻璃底座</option></select></label>
+              <label>Logo 裁切
+                <select id="logoCropMode">
+                  <option value="auto">自动裁去透明留白</option>
+                  <option value="original">使用原始画布</option>
+                  <option value="custom">自定义</option>
+                </select>
+              </label>
+            </div>
+            <p class="field-message" id="logoSafeWarning" role="status"></p>
+            <div class="quick-actions" data-asset="logo"><button type="button" data-action="fit">适应区域</button><button type="button" data-action="fill">填满区域</button><button type="button" data-action="emphasize">放大突出</button><button type="button" data-action="original">原始大小</button><button type="button" data-action="center">居中</button><button type="button" data-action="reset">复原</button></div>
             <div id="logoRangeControls"></div>
           </div>
         </details>
@@ -174,7 +189,9 @@
                 </select>
               </label>
             </div>
-            <div class="quick-actions" data-asset="card"><button type="button" data-action="center">卡片居中</button><button type="button" data-action="smart">智能位置</button><button type="button" data-action="auto">自动排版</button><button type="button" data-action="fixed">固定高度</button></div>
+            <div class="quick-actions" data-asset="card"><button type="button" data-action="center">卡片居中</button><button type="button" data-action="text-center">文字居中</button><button type="button" data-action="logo-center">Logo 居中</button><button type="button" data-action="auto">自动排版</button><button type="button" data-action="fixed">固定高度</button></div>
+            <p class="hint-text" id="layoutDiagnostics" role="status"></p>
+            <p class="hint-text">以下间距参数控制“可见距离”（字形边界之间的空白），不是基线差值。</p>
             <div id="typeRangeControls"></div>
           </div>
         </details>
