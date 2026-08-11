@@ -31,11 +31,10 @@
         <details open>
           <summary>内容</summary>
           <div class="settings-stack">
-            <label>主标题<input type="text" id="mainTitle" value="人类的护道者" maxlength="64" /></label>
+            <label>主标题<input type="text" id="mainTitle" value="雕像也无法让她回心转意" maxlength="64" /></label>
             <p class="field-message" id="titleWarning" role="status"></p>
             <label>副标题<input type="text" id="subTitle" value="成就解锁" maxlength="64" /></label>
-            <label>介绍文案<textarea id="description" rows="5" maxlength="500">世界需要人类，而人类需要护道者。
-上传你的 Logo 与底图，生成一张具有高级玻璃质感的游戏成就介绍卡片。</textarea></label>
+            <label>介绍文案<textarea id="description" rows="5" maxlength="500">它们毫无意义</textarea></label>
             <p class="field-message" id="descriptionWarning" role="status"></p>
             <label>字体
               <select id="fontFamily">
@@ -88,8 +87,10 @@
         <details>
           <summary>Liquid Glass</summary>
           <div class="settings-stack">
-            <div class="preset-head"><span>玻璃风格预设</span><strong id="glassPresetLabel">标准</strong></div>
-            <div class="glass-presets" id="glassPresets" aria-label="玻璃风格预设"></div>
+            <div class="preset-head"><span>材质预设</span><strong id="glassPresetLabel">标准</strong></div>
+            <div class="glass-presets" id="glassPresets" aria-label="材质预设"></div>
+            <button class="button secondary full-width" id="smartFit" type="button">智能适配底图</button>
+            <p class="smart-summary" id="smartSummary" role="status"></p>
             <div id="glassRangeControls"></div>
             <div class="two-col">
               <label>强调色<input type="color" id="accentColor" value="#F5F7FF" /></label>
@@ -105,6 +106,8 @@
         <details>
           <summary>排版与预览</summary>
           <div class="settings-stack">
+            <div class="preset-head"><span>版式预设</span></div>
+            <div class="layout-presets" id="layoutPresets" aria-label="版式预设"></div>
             <div id="typeRangeControls"></div>
           </div>
         </details>
