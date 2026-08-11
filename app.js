@@ -12,28 +12,6 @@ const ALPHA_MIN = 16;
 const LOGO_CROP_PADDING = .065;
 const LOGO_OFFSET_RANGE = { x: 300, y: 190 };
 
-const DEMO_PRESETS = {
-  mingye: {
-    id: "mingye",
-    label: "暝夜",
-    background: "./assets/demo/mingye-background.jpg",
-    logo: "./assets/demo/mingye-logo.png",
-    content: { subTitle: "成就解锁", mainTitle: "雕像也无法让她回心转意", description: "它们毫无意义" },
-    state: {
-      layoutPreset: "system", materialBase: "obsidian", glassPreset: "obsidian",
-      cardHeightMode: "auto", cardPositionMode: "auto", dividerMode: "auto", layoutDensityMode: "auto",
-      logoStyle: "floating", logoCropMode: "auto", showSubtitleMarker: true,
-      textColor: "#FFFFFF", primaryAccent: "#EAC77F", accentColor: "#EAC77F", secondaryAccent: "#961F18",
-      glassTintColor: "#0B1018", glassTintOpacity: .32, glassSaturation: .78, glassContrast: 1.03, glassDispersion: 0,
-      glassDepth: 58, cardOpacity: 60,
-      backgroundScale: 100, backgroundX: 0, backgroundY: 0, backgroundOpacity: 100,
-      logoScale: 100, logoX: 0, logoY: 0, logoOpticalOffsetY: 0,
-      subtitleOpacity: .88, titleOpacity: .96, descOpacity: .80, titleShadowOpacity: .12, descShadowOpacity: .10,
-      titleFontFamily: "system", bodyFontFamily: "system", typographyManuallyEdited: false
-    }
-  }
-};
-
 const FONT_STACKS = {
   system: "Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'PingFang SC', 'Segoe UI', 'Microsoft YaHei', sans-serif",
   song: "'Songti SC', 'STSong', 'SimSun', serif",
@@ -95,7 +73,7 @@ const DEFAULTS = {
   logoCropMode: "auto", logoCropBounds: null, logoContainerSize: 312,
   glassPreset: "standard", materialBase: "standard", glassDepth: 58, cardOpacity: 22, glassDispersion: 0,
   glassSaturation: 1.07, glassContrast: 1.03, glassTintColor: "#FFFFFF", glassTintOpacity: .12,
-  layoutPreset: "system", smartSummary: "", smartConfidence: "low", demoId: "",
+  layoutPreset: "system", smartSummary: "", smartConfidence: "low",
   subtitleOpacity: .88, titleOpacity: .96, descOpacity: .80, titleShadowOpacity: .12, descShadowOpacity: .10,
   cardHeightMode: "auto", dividerMode: "auto", cardPositionMode: "auto", layoutDensityMode: "auto",
   cardX: 0, cardY: 0, cardScale: 100, cardHeight: 570,
@@ -236,51 +214,6 @@ function undo() { if (history.length < 2) return; future.push(history.pop()); re
 function redo() { const next = future.pop(); if (!next) return; history.push(next); restoreSnapshot(JSON.parse(next)); persist(); updateHistoryButtons(); }
 function updateHistoryButtons() { if ($("undoButton")) $("undoButton").disabled = history.length < 2; if ($("redoButton")) $("redoButton").disabled = !future.length; }
 
-/* ---------- Built-in demo assets ----------
-   Same-origin fetch -> Blob -> data URL. Everything downstream (preview, PNG,
-   SVG) then references a self-contained data URL, so an exported SVG opened
-   offline — including from iOS Safari — still shows the artwork. */
-const demoAssetCache = new Map();
-async function loadDemoAsset(url) {
-  if (demoAssetCache.has(url)) return demoAssetCache.get(url);
-  const response = await fetch(url, { cache: "force-cache" });
-  if (!response.ok) throw new Error(`素材加载失败：${url}`);
-  const blob = await response.blob();
-  const dataUrl = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = reject; r.readAsDataURL(blob); });
-  demoAssetCache.set(url, dataUrl);
-  return dataUrl;
-}
-async function loadDemoPreset(id, { silent = false } = {}) {
-  const demo = DEMO_PRESETS[id];
-  if (!demo) return false;
-  const toast = silent ? null : showToast("正在载入示例素材…", "success", true);
-  try {
-    const [background, logo] = await Promise.all([loadDemoAsset(demo.background), loadDemoAsset(demo.logo)]);
-    beginInteraction();
-    Object.assign(state, DEFAULTS, demo.content, demo.state, { background, logo, demoId: demo.id, themes: [], selectedTheme: -1, editorTarget: null, layoutStateVersion: LAYOUT_STATE_VERSION });
-    logoCropCache = null; logoAspectCache = { src: "", aspect: 1 };
-    await refreshLogoAspect();
-    await refreshLogoCropBounds({ recomputeScale: true });
-    applySmartLayoutForContent();
-    invalidateSmartCache();
-    extractThemeColors(background);
-    state.smartSummary = "已载入暝夜示例（可点击智能适配重新分析）";
-    syncUi(); scheduleRender(); endInteraction();
-    toast?.remove();
-    if (!silent) showToast("已载入暝夜示例，可通过撤销恢复之前的作品。");
-    return true;
-  } catch (err) {
-    toast?.remove();
-    if (!silent) showToast(`示例载入失败：${err.message || "未知错误"}`, "error", true);
-    return false;
-  }
-}
-async function loadDemoWithConfirm(id) {
-  const dirty = Boolean(state.background || state.logo || state.demoId !== id);
-  if (dirty && !confirm("载入暝夜示例会替换当前的素材与文案，此操作可以撤销。是否继续？")) return;
-  await loadDemoPreset(id);
-}
-function hasSavedWork() { try { return Boolean(localStorage.getItem(STORAGE_KEY) || LEGACY_STORAGE_KEYS.some(k => localStorage.getItem(k))); } catch (_) { return false; } }
 function saveState() { try { const plain = snapshot(); localStorage.setItem(STORAGE_KEY, JSON.stringify(plain)); } catch (err) { if (!storageWarningShown) { storageWarningShown = true; showToast("存储空间不足，已优先保留当前会话，请尽快导出作品。", "error", true); } } }
 function openDb() { return new Promise((resolve, reject) => { if (!window.indexedDB) return reject(new Error("IndexedDB unavailable")); const req = indexedDB.open(DB_NAME, 1); req.onupgradeneeded = () => req.result.createObjectStore("assets"); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
 async function dbPut(key, value) { try { const db = await openDb(); await new Promise((resolve, reject) => { const tx = db.transaction("assets", "readwrite"); tx.objectStore("assets").put(value, key); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); }); db.close(); } catch (_) { if (!dbWarningShown) { dbWarningShown = true; showToast("当前浏览器无法长期保存素材，关闭页面前请先导出作品。", "error", true); } } }
@@ -761,7 +694,7 @@ function updateAssetCards() { const pairs=[ ["background","backgroundThumb","bac
 function validateImage(file) { if (!file) return ""; if (!file.type.startsWith("image/")) return "请选择图片文件。"; if (file.size > MAX_FILE_SIZE) return "图片超过 20MB，请压缩后重试。"; return ""; }
 async function decodeImageBlob(blob) { if (window.createImageBitmap) { try { return await createImageBitmap(blob, { imageOrientation: "from-image" }); } catch (_) {} } const url = URL.createObjectURL(blob); try { const img = new Image(); img.decoding = "async"; img.src = url; await img.decode(); return img; } finally { setTimeout(() => URL.revokeObjectURL(url), 5000); } }
 async function downsampleImage(file, kind) { const decoded = await decodeImageBlob(file); const sourceWidth = decoded.width, sourceHeight = decoded.height; const edge = Math.max(sourceWidth, sourceHeight); const ratio = Math.min(1, MAX_WORK_IMAGE_EDGE / edge); const targetWidth = Math.max(1, Math.round(sourceWidth * ratio)); const targetHeight = Math.max(1, Math.round(sourceHeight * ratio)); const canvas = document.createElement("canvas"), ctx = canvas.getContext("2d"); canvas.width = targetWidth; canvas.height = targetHeight; if (!ctx) throw new Error("浏览器无法处理图片画布"); ctx.drawImage(decoded, 0, 0, targetWidth, targetHeight); if (decoded.close) decoded.close(); const type = file.type === "image/png" && kind === "logo" ? "image/png" : "image/jpeg"; const quality = type === "image/jpeg" ? .92 : undefined; const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error("图片转换失败")), type, quality)); canvas.width = canvas.height = 0; return await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = reject; r.readAsDataURL(blob); }); }
-async function readAsset(file, kind) { const error=$(kind==="background"?"backgroundError":"logoError"), msg=validateImage(file); if (error) error.textContent=msg; if(msg)return; try { const url=await downsampleImage(file, kind); beginInteraction(); state.editorTarget=kind; state[kind]=url; state.demoId=""; if(kind==="background"){extractThemeColors(url);state.backgroundScale=100;state.backgroundX=0;state.backgroundY=0;invalidateSmartCache();} else {state.logoScale=DEFAULTS.logoScale;state.logoX=0;state.logoY=0;logoCropCache=null;logoAspectCache={src:"",aspect:1};await refreshLogoAspect();await refreshLogoCropBounds();} syncUi(); scheduleRender(); endInteraction(); } catch (_) { const heic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name); if (error) error.textContent = heic ? "当前浏览器无法读取该照片格式，请在照片中导出为 JPEG/PNG 后重试。" : "图片无法解码，请更换一个有效文件。"; } }
+async function readAsset(file, kind) { const error=$(kind==="background"?"backgroundError":"logoError"), msg=validateImage(file); if (error) error.textContent=msg; if(msg)return; try { const url=await downsampleImage(file, kind); beginInteraction(); state.editorTarget=kind; state[kind]=url; if(kind==="background"){extractThemeColors(url);state.backgroundScale=100;state.backgroundX=0;state.backgroundY=0;invalidateSmartCache();} else {state.logoScale=DEFAULTS.logoScale;state.logoX=0;state.logoY=0;logoCropCache=null;logoAspectCache={src:"",aspect:1};await refreshLogoAspect();await refreshLogoCropBounds();} syncUi(); scheduleRender(); endInteraction(); } catch (_) { const heic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name); if (error) error.textContent = heic ? "当前浏览器无法读取该照片格式，请在照片中导出为 JPEG/PNG 后重试。" : "图片无法解码，请更换一个有效文件。"; } }
 function setupUpload(kind) { const card=$(kind==="background"?"backgroundUploadCard":"logoUploadCard"), input=$(kind==="background"?"backgroundInput":"logoInput"), replace=$(kind==="background"?"replaceBackground":"replaceLogo"), clear=$(kind==="background"?"clearBackground":"clearLogo"); const trigger=()=>{state.editorTarget=kind; input.click();}; card.addEventListener("click",trigger); card.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trigger();}}); replace.addEventListener("click",trigger); input.addEventListener("change",e=>readAsset(e.target.files[0],kind)); ["dragenter","dragover"].forEach(t=>card.addEventListener(t,e=>{e.preventDefault();state.editorTarget=kind;card.classList.add("drag-over");})); ["dragleave","drop"].forEach(t=>card.addEventListener(t,e=>{e.preventDefault();card.classList.remove("drag-over");})); card.addEventListener("drop",e=>readAsset(e.dataTransfer.files[0],kind)); clear.addEventListener("click",()=>{beginInteraction();state.editorTarget=kind;state[kind]="";if(kind==="background"){state.themes=[];state.selectedTheme=-1;invalidateSmartCache();}input.value="";syncUi();scheduleRender();endInteraction();}); }
 async function registerCustomFont(show = true) { if (!state.customFontData || !state.customFontName) return; if (!window.FontFace || !document.fonts) { showToast("当前浏览器不支持可靠加载自定义字体。", "error", true); return; } const face=new FontFace(state.customFontName,`url(${state.customFontData})`); try { await face.load(); document.fonts.add(face); await document.fonts.ready; if(show)showToast("自定义字体已加载"); } catch (_) { if ($("fontStatus")) $("fontStatus").textContent="字体加载失败"; showToast("字体加载失败，无法可靠导出。","error",true); } }
 function setupFontUpload() { $("fontInput").addEventListener("change", async e=>{const file=e.target.files[0];if(!file)return; if(file.size>MAX_FILE_SIZE){$("fontStatus").textContent="字体超过 20MB";return;} const ext=(file.name.split(".").pop()||"ttf").toLowerCase(); const fmt={ttf:"truetype",otf:"opentype",woff:"woff",woff2:"woff2"}[ext]; if(!fmt){$("fontStatus").textContent="不支持该字体格式";return;} const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(file);}); beginInteraction();state.customFontName=`UserFont${Date.now()}`;state.customFontData=data;state.customFontFormat=fmt;state.customFontFileName=file.name;state.customFontScope=state.customFontScope||"title";await registerCustomFont();syncUi();scheduleRender();endInteraction();}); }
@@ -1089,10 +1022,8 @@ async function downloadPng(options = {}) { if(exportBusy)return; exportBusy=true
 async function downloadSvg(options = {}) { try { await ensureResources(); const blob = new Blob([serializeSvg()],{type:"image/svg+xml;charset=utf-8"}); const filename = `${safeFilename(state.mainTitle)}-${state.width}x${state.height}-${timestamp()}.svg`; await saveOrShareBlob(blob, filename, "image/svg+xml", options.share); showToast("SVG 已导出。某些第三方应用可能不支持内嵌字体，跨应用展示建议使用 PNG。"); if($("sheetNote"))$("sheetNote").textContent="SVG 已生成，建议保存到‘文件’。"; } catch(err){showToast(`导出失败：${err.message||"未知错误"}`,"error",true);} }
 
 function resetAdjustments() { beginInteraction(); Object.keys(DEFAULTS).forEach(k=>{if(k!=="mainTitle"&&k!=="subTitle"&&k!=="description")state[k]=DEFAULTS[k];}); syncUi(); scheduleRender(); endInteraction(); }
-function applyExampleReset() { beginInteraction(); Object.assign(state,{...DEFAULTS,background:"",logo:"",customFontName:"",customFontData:"",customFontFormat:"",customFontFileName:"",themes:[],selectedTheme:-1,editorTarget:null,demoId:"",logoCropBounds:null}); logoCropCache=null; logoAspectCache={src:"",aspect:1}; invalidateSmartCache(); syncUi(); scheduleRender(); endInteraction(); }
-/* "恢复示例" reloads the built-in Mingye demo. */
-function resetExample() { if(!confirm("恢复示例会用暝夜示例替换当前的底图、Logo 与文案，此操作可以撤销。是否继续？")) return; loadDemoPreset("mingye"); }
-/* "新建空白作品" must never auto-reload the demo. */
+/* Clears assets and content back to the blank starting state. */
+function applyExampleReset() { beginInteraction(); Object.assign(state,{...DEFAULTS,background:"",logo:"",customFontName:"",customFontData:"",customFontFormat:"",customFontFileName:"",themes:[],selectedTheme:-1,editorTarget:null,logoCropBounds:null}); logoCropCache=null; logoAspectCache={src:"",aspect:1}; invalidateSmartCache(); syncUi(); scheduleRender(); endInteraction(); }
 function newArtwork(){ if(!confirm("新建作品会清空当前素材与内容，是否继续？")) return; applyExampleReset(); showToast("已新建空白作品。"); }
 function bindBasicInputs(){["mainTitle","subTitle","description"].forEach(k=>$(k).addEventListener("focus",beginInteraction));["mainTitle","subTitle","description"].forEach(k=>$(k).addEventListener("input",e=>{state[k]=e.target.value;scheduleRender();queuePersist();}));["mainTitle","subTitle","description"].forEach(k=>$(k).addEventListener("change",endInteraction));["accentColor","textColor","glassTintColor"].forEach(k=>$(k)?.addEventListener("input",e=>{beginInteraction();state[k]=e.target.value;if(k==="accentColor")state.primaryAccent=e.target.value;state.selectedTheme=-1;markSmartManual();syncUi();scheduleRender();endInteraction();})); if ($("fontFamily")) $("fontFamily").addEventListener("change",e=>{beginInteraction();state.fontFamily=e.target.value;state.titleFontFamily=e.target.value;state.bodyFontFamily=e.target.value;state.typographyManuallyEdited=true;syncUi();scheduleRender();endInteraction();}); ["titleFontFamily","bodyFontFamily","customFontScope","showSubtitleMarker"].forEach(k=>$(k)?.addEventListener("change",e=>{beginInteraction();state[k]=k==="showSubtitleMarker"?e.target.value==="true":e.target.value;state.typographyManuallyEdited=true;syncUi();scheduleRender();endInteraction();}));["cardHeightMode","dividerMode","cardPositionMode","layoutDensityMode"].forEach(k=>$(k)?.addEventListener("change",e=>{beginInteraction();state[k]=e.target.value;if(k==="layoutDensityMode"&&state[k]==="auto")applySmartLayoutForContent();syncUi();scheduleRender();endInteraction();}));$("logoStyle").addEventListener("change",e=>{beginInteraction();state.logoStyle=e.target.value;syncUi();scheduleRender();endInteraction();});}
 function setupClipboard(){window.addEventListener("paste",e=>{const item=[...e.clipboardData.items].find(i=>i.type.startsWith("image/"));if(!item)return;readAsset(item.getAsFile(),state.editorTarget==="logo"?"logo":"background");showToast(`已粘贴到${state.editorTarget==="logo"?" Logo":"底图"}`);});}
@@ -1104,15 +1035,10 @@ function setupVisualViewport(){ const vv=window.visualViewport; if(!vv)return; c
 function queueLayoutUpdate(){ if(layoutQueued)return; layoutQueued=true; requestAnimationFrame(()=>{layoutQueued=false; scheduleRender();}); }
 function setupResizeObserver(){ if(window.ResizeObserver){new ResizeObserver(queueLayoutUpdate).observe($("previewStage"));} window.addEventListener("resize",queueLayoutUpdate); window.addEventListener("orientationchange",queueLayoutUpdate); window.visualViewport?.addEventListener("resize",queueLayoutUpdate); }
 function bindShortcuts(){window.addEventListener("keydown",e=>{if(!(e.metaKey||e.ctrlKey))return;if(e.key.toLowerCase()==="z"){e.preventDefault();e.shiftKey?redo():undo();}else if(e.key.toLowerCase()==="y"){e.preventDefault();redo();}});}
-function init(){setupRanges();setupUpload("background");setupUpload("logo");setupFontUpload();assetQuickActions();bindBasicInputs();setupCanvasEditing();setupClipboard();setupMobile();setupResizeObserver();bindShortcuts();$("downloadPng").addEventListener("click",()=>downloadPng());$("headerExportPng").addEventListener("click",()=>downloadPng());$("downloadSvg").addEventListener("click",()=>downloadSvg());$("undoButton").addEventListener("click",undo);$("redoButton").addEventListener("click",redo);$("resetAdjustments").addEventListener("click",resetAdjustments);$("resetDemo").addEventListener("click",resetExample);$("newArtwork").addEventListener("click",newArtwork);$("smartFit").addEventListener("click",smartFitBackground);
-  document.querySelectorAll("[data-load-demo]").forEach(btn=>btn.addEventListener("click",()=>loadDemoWithConfirm(btn.dataset.loadDemo)));
+function init(){setupRanges();setupUpload("background");setupUpload("logo");setupFontUpload();assetQuickActions();bindBasicInputs();setupCanvasEditing();setupClipboard();setupMobile();setupResizeObserver();bindShortcuts();$("downloadPng").addEventListener("click",()=>downloadPng());$("headerExportPng").addEventListener("click",()=>downloadPng());$("downloadSvg").addEventListener("click",()=>downloadSvg());$("undoButton").addEventListener("click",undo);$("redoButton").addEventListener("click",redo);$("resetAdjustments").addEventListener("click",resetAdjustments);$("newArtwork").addEventListener("click",newArtwork);$("smartFit").addEventListener("click",smartFitBackground);
   $("logoCropMode")?.addEventListener("change",async e=>{beginInteraction();state.logoCropMode=e.target.value;if(state.logoCropMode==="auto")await refreshLogoCropBounds();syncUi();scheduleRender();endInteraction();});
   syncUi();renderSvg();recordHistory();
-  // First visit with no saved work loads the built-in demo; saved work always wins.
-  restorePersisted().then(async restored=>{
-    if(!restored && !hasSavedWork()) await loadDemoPreset("mingye",{silent:true});
-    syncUi();scheduleRender();recordHistory();
-  });
+  restorePersisted().then(()=>{syncUi();scheduleRender();recordHistory();});
 }
 /* Layout introspection hook for the automated layout regression tests.
    Read-only, and only mounted for local development or when ?debug=layout is
@@ -1126,7 +1052,7 @@ function layoutDebugEnabled() {
 }
 if (layoutDebugEnabled()) {
   window.__state = state;
-  window.__debug = { layoutGeometry, systemTextPlan, currentTypography, logoContentGeometry, layoutSystemTypography, measureText, glyphMetrics, fontStackForRole, computeSystemAutoLayout, activeLogoCrop, loadDemoPreset, chooseSmartMaterial, analyzeBackground, analyzeLogoColors, describeAccent };
+  window.__debug = { layoutGeometry, systemTextPlan, currentTypography, logoContentGeometry, layoutSystemTypography, measureText, glyphMetrics, fontStackForRole, computeSystemAutoLayout, activeLogoCrop, chooseSmartMaterial, analyzeBackground, analyzeLogoColors, describeAccent };
   window.__pngFallback = drawCompatiblePng;
   window.__cropBench = () => computeLogoCropBounds(state.logo);
 }

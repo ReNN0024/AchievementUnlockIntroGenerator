@@ -16,7 +16,6 @@
         <p class="header-copy">在一张卡片中完成底图、Logo 与成就文案的精细编排。</p>
       </div>
       <div class="header-actions">
-        <button class="button secondary" data-load-demo="mingye" type="button">载入暝夜示例</button>
         <button class="button secondary" id="newArtwork" type="button">新建作品</button>
         <button class="button primary" id="headerExportPng" type="button">导出 PNG</button>
       </div>
@@ -32,10 +31,6 @@
         <details open>
           <summary>内容</summary>
           <div class="settings-stack">
-            <div class="demo-loader">
-              <button class="button small secondary full-width" data-load-demo="mingye" type="button">载入暝夜示例</button>
-              <p class="hint-text">载入内置演示素材与文案，可用撤销恢复当前作品。</p>
-            </div>
             <label>主标题<input type="text" id="mainTitle" value="雕像也无法让她回心转意" maxlength="64" /></label>
             <p class="field-message" id="titleWarning" role="status"></p>
             <label>副标题<input type="text" id="subTitle" value="成就解锁" maxlength="64" /></label>
@@ -198,7 +193,6 @@
 
         <div class="editor-footer-actions">
           <button class="button secondary" id="resetAdjustments" type="button">恢复默认参数</button>
-          <button class="button tertiary" id="resetDemo" type="button">恢复示例</button>
         </div>
       </aside>
 
