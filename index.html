@@ -60,6 +60,10 @@
             底图垂直位置
             <input type="range" id="backgroundY" min="-100" max="100" value="0" />
           </label>
+          <label>
+            底图不透明度
+            <input type="range" id="backgroundOpacity" min="0" max="100" value="100" />
+          </label>
           <button class="link-button" id="clearBackground">移除底图</button>
         </details>
 
@@ -97,6 +101,10 @@
             <label>强调色<input type="color" id="accentColor" value="#f5f7ff" /></label>
             <label>文字色<input type="color" id="textColor" value="#ffffff" /></label>
           </div>
+          <div class="theme-block">
+            <div class="mini-heading">底图主题色待选</div>
+            <div class="theme-palette" id="themePalette"></div>
+          </div>
         </details>
 
         <details>
@@ -115,10 +123,19 @@
             <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2,font/*" />
           </label>
           <label>
+            文案框宽度
+            <input type="range" id="descriptionBoxWidth" min="520" max="1060" value="930" />
+          </label>
+          <label>
+            文案框高度
+            <input type="range" id="descriptionBoxHeight" min="90" max="300" value="210" />
+          </label>
+          <label>
             缩放预览
             <input type="range" id="previewZoom" min="42" max="100" value="72" />
           </label>
         </details>
+        <button class="secondary-action" id="resetAdjustments" type="button">一键复原所有调节</button>
       </aside>
 
       <section class="preview-wrap">
