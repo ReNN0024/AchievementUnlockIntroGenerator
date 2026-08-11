@@ -3,194 +3,145 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#F5F5F7" />
   <title>Achievement Unlock Intro Generator</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <main class="app-shell">
-    <section class="hero">
+    <header class="app-header">
       <div>
-        <p class="eyebrow">Achievement Unlock Intro Generator</p>
-        <h1>Liquid Glass 游戏成就卡片生成工具</h1>
-        <p class="hero-copy">上传底图与 Logo，像视频封面裁切一样调整保留区域；中间成就卡片采用 Apple 风格的 liquid glass 视觉，可调节色散、深度与透明度，并导出同参考图比例的 300dpi PNG。</p>
+        <p class="eyebrow">ACHIEVEMENT UNLOCK INTRO GENERATOR</p>
+        <h1>游戏成就介绍卡片</h1>
+        <p class="header-copy">在一张卡片中完成底图、Logo 与成就文案的精细编排。</p>
       </div>
-      <div class="hero-actions">
-        <button class="primary" id="downloadPng">导出 300dpi PNG</button>
-        <button class="ghost" id="downloadSvg">导出 SVG</button>
+      <div class="header-actions">
+        <button class="button secondary" id="newArtwork" type="button">新建作品</button>
+        <button class="button primary" id="headerExportPng" type="button">导出 PNG</button>
       </div>
-    </section>
+    </header>
+
+    <div class="mobile-tabs" role="tablist" aria-label="工作区切换">
+      <button type="button" class="active" data-mobile-tab="editor" role="tab" aria-selected="true">编辑</button>
+      <button type="button" data-mobile-tab="preview" role="tab" aria-selected="false">预览</button>
+    </div>
 
     <section class="workspace">
-      <aside class="panel controls" aria-label="编辑设置">
+      <aside class="panel controls" id="editorPanel" aria-label="编辑器设置">
         <details open>
-          <summary>内容输入</summary>
-          <label>
-            Logo 图片
-            <input type="file" id="logoInput" accept="image/*" />
-          </label>
-          <label>
-            主标题
-            <input type="text" id="mainTitle" value="人类的护道者" maxlength="32" />
-          </label>
-          <label>
-            副标题
-            <input type="text" id="subTitle" value="成就解锁" maxlength="36" />
-          </label>
-          <label>
-            介绍文案
-            <textarea id="description" rows="4" maxlength="160">世界需要人类，而人类需要护道者。上传你的 Logo 与底图，生成一张具有高级玻璃质感的游戏成就介绍卡片。</textarea>
-          </label>
+          <summary>内容</summary>
+          <div class="settings-stack">
+            <label>主标题<input type="text" id="mainTitle" value="人类的护道者" maxlength="64" /></label>
+            <p class="field-message" id="titleWarning" role="status"></p>
+            <label>副标题<input type="text" id="subTitle" value="成就解锁" maxlength="64" /></label>
+            <label>介绍文案<textarea id="description" rows="5" maxlength="500">世界需要人类，而人类需要护道者。
+上传你的 Logo 与底图，生成一张具有高级玻璃质感的游戏成就介绍卡片。</textarea></label>
+            <p class="field-message" id="descriptionWarning" role="status"></p>
+            <label>字体
+              <select id="fontFamily">
+                <option value="system">系统黑体 / 简洁</option>
+                <option value="song">宋体 / 文雅</option>
+                <option value="kai">楷体 / 叙事</option>
+                <option value="hei">思源黑体优先 / 现代</option>
+              </select>
+            </label>
+            <div class="font-upload-line">
+              <label class="compact-label">自定义字体<input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2,font/*" /></label>
+              <span class="file-status" id="fontStatus">未上传</span>
+            </div>
+          </div>
         </details>
 
         <details open>
-          <summary>底图上传与裁切</summary>
-          <label>
-            底图图片
-            <input type="file" id="backgroundInput" accept="image/*" />
-          </label>
-          <label>
-            底图缩放
-            <input type="range" id="backgroundScale" min="100" max="240" value="100" />
-          </label>
-          <label>
-            底图水平位置
-            <input type="range" id="backgroundX" min="-100" max="100" value="0" />
-          </label>
-          <label>
-            底图垂直位置
-            <input type="range" id="backgroundY" min="-100" max="100" value="0" />
-          </label>
-          <label>
-            底图不透明度
-            <input type="range" id="backgroundOpacity" min="0" max="100" value="100" />
-          </label>
-          <button class="link-button" id="clearBackground">移除底图</button>
+          <summary>底图</summary>
+          <div class="settings-stack">
+            <section class="upload-card" id="backgroundUploadCard" tabindex="0" role="button" aria-label="上传底图，可点击、拖拽或粘贴图片">
+              <input type="file" id="backgroundInput" accept="image/png,image/jpeg,image/webp" hidden />
+              <div class="upload-preview" id="backgroundThumb" aria-hidden="true"></div>
+              <div class="upload-copy"><strong id="backgroundUploadTitle">上传底图</strong><span id="backgroundFileName">PNG、JPEG、WebP，最大 20MB</span></div>
+              <span class="upload-action">选择文件</span>
+            </section>
+            <div class="asset-actions"><button class="button small secondary" id="replaceBackground" type="button">替换</button><button class="button small tertiary" id="clearBackground" type="button">移除</button></div>
+            <p class="field-message" id="backgroundError" role="alert"></p>
+            <div class="quick-actions" data-asset="background"><button type="button" data-action="fit">适应</button><button type="button" data-action="fill">填满</button><button type="button" data-action="center">居中</button><button type="button" data-action="reset">复原</button></div>
+            <div id="backgroundRangeControls"></div>
+          </div>
         </details>
 
-        <details open>
-          <summary>Logo 裁切</summary>
-          <label>
-            Logo 缩放
-            <input type="range" id="logoScale" min="100" max="260" value="120" />
-          </label>
-          <label>
-            Logo 水平位置
-            <input type="range" id="logoX" min="-100" max="100" value="0" />
-          </label>
-          <label>
-            Logo 垂直位置
-            <input type="range" id="logoY" min="-100" max="100" value="0" />
-          </label>
+        <details>
+          <summary>Logo</summary>
+          <div class="settings-stack">
+            <section class="upload-card" id="logoUploadCard" tabindex="0" role="button" aria-label="上传 Logo，可点击、拖拽或粘贴图片">
+              <input type="file" id="logoInput" accept="image/png,image/jpeg,image/webp" hidden />
+              <div class="upload-preview logo" id="logoThumb" aria-hidden="true"></div>
+              <div class="upload-copy"><strong id="logoUploadTitle">上传 Logo</strong><span id="logoFileName">PNG、JPEG、WebP，最大 20MB</span></div>
+              <span class="upload-action">选择文件</span>
+            </section>
+            <div class="asset-actions"><button class="button small secondary" id="replaceLogo" type="button">替换</button><button class="button small tertiary" id="clearLogo" type="button">移除</button></div>
+            <p class="field-message" id="logoError" role="alert"></p>
+            <label>Logo 样式<select id="logoStyle"><option value="floating">悬浮</option><option value="glass">玻璃底座</option></select></label>
+            <div class="quick-actions" data-asset="logo"><button type="button" data-action="fit">适应</button><button type="button" data-action="fill">填满</button><button type="button" data-action="center">居中</button><button type="button" data-action="reset">复原</button></div>
+            <div id="logoRangeControls"></div>
+          </div>
         </details>
 
-        <details open>
+        <details>
           <summary>Liquid Glass</summary>
-          <label>
-            玻璃深度
-            <input type="range" id="glassDepth" min="0" max="100" value="58" />
-          </label>
-          <label>
-            边缘色散
-            <input type="range" id="glassDispersion" min="0" max="100" value="5" />
-          </label>
-          <label>
-            卡片透明度
-            <input type="range" id="cardOpacity" min="0" max="60" value="22" />
-          </label>
-          <div class="two-col">
-            <label>强调色<input type="color" id="accentColor" value="#f5f7ff" /></label>
-            <label>文字色<input type="color" id="textColor" value="#ffffff" /></label>
-          </div>
-          <div class="theme-block">
-            <div class="mini-heading">底图主题色待选</div>
-            <div class="theme-palette" id="themePalette"></div>
+          <div class="settings-stack">
+            <div class="preset-head"><span>玻璃风格预设</span><strong id="glassPresetLabel">标准</strong></div>
+            <div class="glass-presets" id="glassPresets" aria-label="玻璃风格预设"></div>
+            <div id="glassRangeControls"></div>
+            <div class="two-col">
+              <label>强调色<input type="color" id="accentColor" value="#F5F7FF" /></label>
+              <label>文字色<input type="color" id="textColor" value="#FFFFFF" /></label>
+            </div>
+            <div class="theme-block">
+              <div class="mini-heading">推荐配色</div>
+              <div class="theme-palette" id="themePalette"></div>
+            </div>
           </div>
         </details>
 
-        <details open>
-          <summary>文字与预览</summary>
-          <label>
-            中文字体
-            <select id="fontFamily">
-              <option value="system">系统黑体 / 简洁</option>
-              <option value="song">宋体 / 文雅</option>
-              <option value="kai">楷体 / 叙事</option>
-              <option value="hei">思源黑体优先 / 现代</option>
-            </select>
-          </label>
-          <label>
-            上传自定义字体（可选）
-            <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2,font/*" />
-          </label>
-          <label>
-            副标题到主标题间距
-            <input type="range" id="subtitleTitleGap" min="72" max="230" value="126" />
-          </label>
-          <label>
-            主标题到分隔线间距
-            <input type="range" id="titleRuleGap" min="96" max="260" value="156" />
-          </label>
-          <label>
-            分隔线到正文间距
-            <input type="range" id="ruleDescGap" min="62" max="180" value="106" />
-          </label>
-          <label>
-            正文行距
-            <input type="range" id="descLineGap" min="58" max="112" value="76" />
-          </label>
-          <label>
-            副标题字距
-            <input type="range" id="subtitleLetterSpacing" min="0" max="18" value="8" />
-          </label>
-          <label>
-            主标题字距
-            <input type="range" id="titleLetterSpacing" min="0" max="14" value="4" />
-          </label>
-          <label>
-            正文字距
-            <input type="range" id="descLetterSpacing" min="0" max="10" value="1" />
-          </label>
-          <label>
-            文案框宽度
-            <input type="range" id="descriptionBoxWidth" min="520" max="1060" value="930" />
-          </label>
-          <label>
-            文案框高度
-            <input type="range" id="descriptionBoxHeight" min="90" max="300" value="210" />
-          </label>
-          <label>
-            缩放预览
-            <input type="range" id="previewZoom" min="42" max="100" value="72" />
-          </label>
+        <details>
+          <summary>排版与预览</summary>
+          <div class="settings-stack">
+            <div id="typeRangeControls"></div>
+          </div>
         </details>
-        <button class="secondary-action" id="resetAdjustments" type="button">一键复原所有调节</button>
+
+        <div class="editor-footer-actions">
+          <button class="button secondary" id="resetAdjustments" type="button">恢复默认参数</button>
+          <button class="button tertiary" id="resetDemo" type="button">恢复示例</button>
+        </div>
       </aside>
 
-      <section class="preview-wrap">
-        <div class="preview-toolbar">
-          <div>
-            <strong>所见即所得预览</strong>
-            <span id="dpiInfo">300dpi · 1932×1360px · 参考图比例</span>
+      <section class="preview-wrap" id="previewPanel">
+        <header class="preview-toolbar">
+          <div class="preview-title"><strong>作品预览</strong><span id="dpiInfo">1932×1360 高清 PNG</span></div>
+          <div class="preview-actions">
+            <button class="icon-button" id="undoButton" type="button" aria-label="撤销" title="撤销 (⌘/Ctrl+Z)">↶</button>
+            <button class="icon-button" id="redoButton" type="button" aria-label="重做" title="重做 (⌘/Ctrl+Shift+Z)">↷</button>
+            <span class="zoom-readout" id="zoomReadout">72%</span>
+            <button class="button small primary" id="downloadPng" type="button">导出 PNG</button>
+            <button class="button small secondary" id="downloadSvg" type="button">导出 SVG</button>
           </div>
-          <button class="ghost small" id="resetDemo">恢复示例</button>
-        </div>
-        <div class="preview-stage" id="previewStage">
-          <svg id="achievementSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Liquid Glass 游戏成就卡片预览"></svg>
+        </header>
+        <div class="preview-stage" id="previewStage" aria-label="作品预览画布">
+          <div class="canvas-host" id="canvasHost">
+            <svg id="achievementSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="游戏成就卡片预览"></svg>
+            <div class="selection-layer" id="selectionLayer" aria-hidden="true"></div>
+          </div>
+          <p class="canvas-hint" id="canvasHint">点击底图或 Logo 后，可直接拖动；滚轮可缩放。</p>
         </div>
       </section>
     </section>
-
-    <section class="product-notes">
-      <h2>当前版本能力</h2>
-      <div class="note-grid">
-        <article><h3>固定比例</h3><p>生成图比例与参考图一致，默认输出 1932×1360px，满足 300dpi 高清导出。</p></article>
-        <article><h3>双层结构</h3><p>后方为用户上传底图，前方为 Liquid Glass 成就卡片，结构更清晰。</p></article>
-        <article><h3>封面裁切</h3><p>底图和 Logo 都支持缩放、横向位移、纵向位移，控制区域内保留内容。</p></article>
-        <article><h3>玻璃质感</h3><p>卡片支持调节玻璃深度、边缘色散和透明度，边框更贴近液态玻璃效果。</p></article>
-      </div>
-    </section>
   </main>
 
+  <nav class="mobile-bottom-bar" aria-label="移动端快捷操作">
+    <button class="button secondary" id="mobilePreview" type="button">查看预览</button>
+    <button class="button primary" id="mobileExport" type="button">导出 PNG</button>
+  </nav>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
   <script src="./app.js"></script>
 </body>
 </html>
