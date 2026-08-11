@@ -1,85 +1,32 @@
 const svg = document.getElementById("achievementSvg");
-const stage = document.getElementById("previewStage");
 const dpiInfo = document.getElementById("dpiInfo");
 
 const $ = (id) => document.getElementById(id);
+
+const CANVAS = { width: 1932, height: 1360 };
 
 const state = {
   logo: "",
   background: "",
   customFontName: "",
-  layout: "wide",
-  width: 1800,
-  height: 900,
-  preset: "q-ul",
+  width: CANVAS.width,
+  height: CANVAS.height,
   mainTitle: "人类的护道者",
-  subTitle: "恭喜获得新成就！",
-  description: "世界需要人类，而人类需要护道者。上传你的 Logo，生成一张带有游戏成就感的介绍卡片。",
-  footerText: "UNLOCKED · DESIGN READY · 300DPI",
-  bgColor: "#f8f4ed",
-  accentColor: "#9ac7cd",
-  softColor: "#c1dcda",
-  borderColor: "#b88a3a",
-  textColor: "#453f3a",
-  panelOpacity: 72,
-  ornamentLevel: 0,
-  backgroundOpacity: 34,
-  logoScale: 100,
+  subTitle: "成就解锁",
+  description: "世界需要人类，而人类需要护道者。上传你的 Logo 与底图，生成一张具有高级玻璃质感的游戏成就介绍卡片。",
+  accentColor: "#f5f7ff",
+  textColor: "#ffffff",
+  cardOpacity: 38,
+  glassDepth: 66,
+  glassDispersion: 30,
+  backgroundScale: 100,
+  backgroundX: 0,
+  backgroundY: 0,
+  logoScale: 120,
+  logoX: 0,
+  logoY: 0,
   fontFamily: "system",
   zoom: 72
-};
-
-const presets = {
-  "q-ul": {
-    name: "荆棘 × 不忘",
-    bgColor: "#f8f4ed",
-    accentColor: "#9ac7cd",
-    softColor: "#c1dcda",
-    borderColor: "#b88a3a",
-    textColor: "#453f3a",
-    panelOpacity: 72,
-    ornamentLevel: 0,
-    backgroundOpacity: 34
-  },
-  "q-ur": {
-    name: "繁花 × 不忘",
-    bgColor: "#f8f4ed",
-    accentColor: "#eacb71",
-    softColor: "#f1dea4",
-    borderColor: "#b88a3a",
-    textColor: "#453f3a",
-    panelOpacity: 72,
-    ornamentLevel: 0,
-    backgroundOpacity: 34
-  },
-  "q-ll": {
-    name: "荆棘 × 寻常",
-    bgColor: "#f8f4ed",
-    accentColor: "#b3ca95",
-    softColor: "#d3deba",
-    borderColor: "#b88a3a",
-    textColor: "#453f3a",
-    panelOpacity: 72,
-    ornamentLevel: 0,
-    backgroundOpacity: 34
-  },
-  "q-lr": {
-    name: "繁花 × 寻常",
-    bgColor: "#f8f4ed",
-    accentColor: "#e19dac",
-    softColor: "#eabec5",
-    borderColor: "#b88a3a",
-    textColor: "#453f3a",
-    panelOpacity: 72,
-    ornamentLevel: 0,
-    backgroundOpacity: 34
-  }
-};
-
-const layouts = {
-  wide: { width: 1800, height: 900, label: "横版 6×3 inch / 1800×900px" },
-  square: { width: 1200, height: 1200, label: "方图 4×4 inch / 1200×1200px" },
-  poster: { width: 1200, height: 1800, label: "竖版 4×6 inch / 1200×1800px" }
 };
 
 function escapeXml(value = "") {
@@ -136,183 +83,181 @@ function wrapText(text, maxChars, maxLines) {
   return lines;
 }
 
-function buildDefaultLogo() {
-  const bg = encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420">
+function buildDefaultBackground() {
+  const markup = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS.width} ${CANVAS.height}">
       <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${state.accentColor}"/><stop offset="1" stop-color="${state.borderColor}"/></linearGradient>
+        <radialGradient id="pink" cx="18%" cy="10%" r="48%"><stop stop-color="#ff66d6"/><stop offset=".62" stop-color="#ffd3a8"/><stop offset="1" stop-color="#050714" stop-opacity="0"/></radialGradient>
+        <radialGradient id="purple" cx="78%" cy="78%" r="46%"><stop stop-color="#8347ff"/><stop offset=".62" stop-color="#8fa2ff"/><stop offset="1" stop-color="#050714" stop-opacity="0"/></radialGradient>
+        <linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#02040f"/><stop offset="1" stop-color="#0c1028"/></linearGradient>
       </defs>
-      <rect width="420" height="420" fill="${state.bgColor}"/>
-      <path d="M40 40h340v340H40z" fill="none" stroke="${state.borderColor}" stroke-width="14"/>
-      <path d="M82 82h256v256H82z" fill="none" stroke="${state.accentColor}" stroke-width="6" opacity=".75"/>
-      <circle cx="210" cy="150" r="55" fill="none" stroke="url(#g)" stroke-width="10"/>
-      <path d="M140 300l70-175 70 175-70-48z" fill="url(#g)" opacity=".88"/>
-      <path d="M120 210h180M105 250h210" stroke="${state.borderColor}" stroke-width="5" opacity=".55"/>
-    </svg>
-  `);
-  return `data:image/svg+xml;charset=utf-8,${bg}`;
+      <rect width="100%" height="100%" fill="url(#base)"/>
+      <circle cx="205" cy="115" r="630" fill="url(#pink)" opacity=".96"/>
+      <circle cx="1605" cy="1135" r="620" fill="url(#purple)" opacity=".98"/>
+      <rect width="100%" height="100%" fill="#02040f" opacity=".18"/>
+    </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+}
+
+function buildDefaultLogo() {
+  const markup = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#dce6ff"/></linearGradient>
+        <filter id="s"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity=".24"/></filter>
+      </defs>
+      <rect width="500" height="500" fill="none"/>
+      <g filter="url(#s)">
+        <path d="M250 58 412 152v196L250 442 88 348V152Z" fill="rgba(255,255,255,.16)" stroke="url(#g)" stroke-width="18"/>
+        <path d="M156 250h188M250 156v188" stroke="url(#g)" stroke-width="32" stroke-linecap="round"/>
+        <circle cx="250" cy="250" r="78" fill="none" stroke="url(#g)" stroke-width="22"/>
+      </g>
+    </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+}
+
+function imageLayer(src, clipId, area, scale, offsetX, offsetY, preserve = "xMidYMid slice") {
+  const width = area.width * (scale / 100);
+  const height = area.height * (scale / 100);
+  const maxPanX = Math.max(0, (width - area.width) / 2);
+  const maxPanY = Math.max(0, (height - area.height) / 2);
+  const x = area.x + (area.width - width) / 2 + (offsetX / 100) * maxPanX;
+  const y = area.y + (area.height - height) / 2 + (offsetY / 100) * maxPanY;
+  return `<image href="${src}" x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="${preserve}" clip-path="url(#${clipId})"/>`;
 }
 
 function styleBlock() {
-  const panel = rgba("#fffaf1", state.panelOpacity / 100);
-  const accentSoft = rgba(state.accentColor, 0.22);
-  const borderSoft = rgba(state.borderColor, 0.42);
+  const textSoft = rgba(state.textColor, 0.72);
   return `
     <style>
       .font-main { font-family: ${fontStack()}; }
-      .title { font-weight: 600; letter-spacing: .16em; }
-      .subtitle { font-weight: 600; letter-spacing: .18em; }
-      .desc { font-weight: 500; line-height: 1.55; }
-      .tiny { font-weight: 600; letter-spacing: .22em; }
-      .panelFill { fill: ${panel}; }
-      .accentFill { fill: ${state.accentColor}; }
-      .accentStroke { stroke: ${state.accentColor}; }
-      .borderStroke { stroke: ${state.borderColor}; }
+      .subtitle { font-weight: 850; letter-spacing: .14em; }
+      .title { font-weight: 900; letter-spacing: .04em; }
+      .desc { font-weight: 650; line-height: 1.48; }
       .textFill { fill: ${state.textColor}; }
-      .mutedFill { fill: ${rgba(state.textColor, 0.72)}; }
-      .glow { filter: drop-shadow(0 0 16px ${accentSoft}); }
-      .line { stroke: ${borderSoft}; }
-    </style>
-  `;
+      .mutedFill { fill: ${textSoft}; }
+      .accentStroke { stroke: ${state.accentColor}; }
+      .accentFill { fill: ${state.accentColor}; }
+    </style>`;
 }
 
-function buildDefs() {
-  const bgImage = state.background ? `<image href="${state.background}" x="0" y="0" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" opacity="${state.backgroundOpacity / 100}"/>` : "";
-  const ornament = state.ornamentLevel > 0 ? `<rect width="100%" height="100%" fill="url(#ornamentPattern)" opacity="0.92"/>` : "";
-  const softColor = state.softColor || state.accentColor;
+function buildDefs(card, logoBox) {
+  const depth = state.glassDepth / 100;
+  const dispersion = state.glassDispersion / 100;
+  const shadowOpacity = 0.22 + depth * 0.28;
+  const blur = 18 + depth * 34;
+  const edgeOpacity = 0.18 + dispersion * 0.44;
+  const cardOpacity = state.cardOpacity / 100;
   return `
     <defs>
-      <linearGradient id="panelGrad" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#fffaf1" stop-opacity="${state.panelOpacity / 100}"/>
-        <stop offset=".62" stop-color="#fffaf1" stop-opacity="${Math.max(0.44, state.panelOpacity / 140)}"/>
-        <stop offset="1" stop-color="#f8f4ed" stop-opacity="${Math.max(0.32, state.panelOpacity / 180)}"/>
+      <clipPath id="canvasClip"><rect x="0" y="0" width="${state.width}" height="${state.height}"/></clipPath>
+      <clipPath id="logoClip"><rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="44" ry="44"/></clipPath>
+      <linearGradient id="glassFill" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="${cardOpacity + 0.14}"/>
+        <stop offset="0.42" stop-color="#ffffff" stop-opacity="${cardOpacity * 0.62}"/>
+        <stop offset="1" stop-color="#d7deff" stop-opacity="${Math.max(0.08, cardOpacity * 0.34)}"/>
       </linearGradient>
-      <radialGradient id="spot" cx="22%" cy="45%" r="78%">
-        <stop offset="0" stop-color="${state.accentColor}" stop-opacity="0.38"/>
-        <stop offset="0.42" stop-color="${softColor}" stop-opacity="0.22"/>
-        <stop offset="1" stop-color="#f8f4ed" stop-opacity="0"/>
+      <linearGradient id="glassBorder" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="${0.78 + depth * 0.18}"/>
+        <stop offset="0.28" stop-color="#ffffff" stop-opacity="${0.28 + depth * 0.16}"/>
+        <stop offset="0.62" stop-color="#9db4ff" stop-opacity="${0.18 + dispersion * 0.26}"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="${0.36 + depth * 0.18}"/>
+      </linearGradient>
+      <radialGradient id="glassGlowA" cx="10%" cy="8%" r="60%">
+        <stop stop-color="#ffffff" stop-opacity="${0.28 + depth * 0.22}"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
       </radialGradient>
-      <pattern id="ornamentPattern" width="360" height="360" patternUnits="userSpaceOnUse">
-        <path d="M40 290 C120 160 190 170 260 40 M92 306 C124 244 174 226 238 222 M246 62 C296 100 314 150 308 220" fill="none" stroke="${state.accentColor}" stroke-width="12" opacity="${state.ornamentLevel / 190}" stroke-linecap="round"/>
-        <circle cx="298" cy="238" r="32" fill="none" stroke="${state.borderColor}" stroke-width="10" opacity="${state.ornamentLevel / 220}"/>
-      </pattern>
-      <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="22" stdDeviation="22" flood-color="#000000" flood-opacity="0.28"/>
+      <radialGradient id="glassGlowB" cx="82%" cy="86%" r="58%">
+        <stop stop-color="#7d63ff" stop-opacity="${0.18 + dispersion * 0.18}"/>
+        <stop offset="1" stop-color="#7d63ff" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="liquidShadow" x="-20%" y="-30%" width="140%" height="170%">
+        <feDropShadow dx="0" dy="${22 + depth * 18}" stdDeviation="${blur}" flood-color="#000000" flood-opacity="${shadowOpacity}"/>
       </filter>
-      <clipPath id="logoClip"><rect id="logoClipRect" rx="0"/></clipPath>
+      <filter id="softLogoShadow" x="-25%" y="-25%" width="150%" height="150%">
+        <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity=".32"/>
+      </filter>
+      <filter id="cardBlur" x="-4%" y="-8%" width="108%" height="116%">
+        <feGaussianBlur stdDeviation="${0.6 + depth * 1.2}"/>
+      </filter>
+      <filter id="bgVignette" x="-10%" y="-10%" width="120%" height="120%">
+        <feGaussianBlur stdDeviation="0"/>
+      </filter>
+      <linearGradient id="shade" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#000" stop-opacity=".18"/>
+        <stop offset=".5" stop-color="#000" stop-opacity=".04"/>
+        <stop offset="1" stop-color="#000" stop-opacity=".28"/>
+      </linearGradient>
+      <g id="appleSmoothCard">
+        <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" ry="${card.radius}"/>
+      </g>
     </defs>
-    <rect width="100%" height="100%" fill="#f8f4ed"/>
-    <rect width="100%" height="100%" fill="url(#spot)"/>
-    ${bgImage}
-    ${ornament}
-  `;
+    <clipPath id="cardClip"><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" ry="${card.radius}"/></clipPath>
+    <clipPath id="innerCardClip"><rect x="${card.x + 8}" y="${card.y + 8}" width="${card.width - 16}" height="${card.height - 16}" rx="${card.radius - 8}" ry="${card.radius - 8}"/></clipPath>
+    <g id="dispersionSettings" data-edge-opacity="${edgeOpacity}"></g>`;
 }
 
-function renderWide() {
-  const w = state.width;
-  const h = state.height;
-  const pad = Math.round(w * 0.055);
-  const logoFrame = Math.round(h * 0.5);
-  const logoImage = Math.round(logoFrame * state.logoScale / 100);
-  const x = pad;
-  const y = Math.round((h - logoFrame) / 2);
-  const imageX = x + Math.round((logoFrame - logoImage) / 2);
-  const imageY = y + Math.round((logoFrame - logoImage) / 2);
-  const contentX = x + logoFrame + Math.round(w * 0.065);
-  const contentW = w - contentX - pad;
-  const descLines = wrapText(state.description, 26, 4);
-  const panelH = Math.round(h * 0.62);
-  const panelY = Math.round((h - panelH) / 2);
+function renderCard(card, logoBox) {
+  const depth = state.glassDepth / 100;
+  const dispersion = state.glassDispersion / 100;
+  const edgeOpacity = 0.18 + dispersion * 0.44;
+  const redOffset = 2 + dispersion * 9;
+  const blueOffset = 1.5 + dispersion * 8;
   const logoSrc = state.logo || buildDefaultLogo();
-  const footer = state.footerText.trim();
+  const descLines = wrapText(state.description, 24, 3);
+  const contentX = logoBox.x + logoBox.width + 78;
+  const titleY = card.y + 210;
+  const lineY = card.y + 326;
+  const logoImage = imageLayer(logoSrc, "logoClip", logoBox, state.logoScale, state.logoX, state.logoY, "xMidYMid slice");
 
   return `
-    <rect x="${pad * 0.45}" y="${panelY}" width="${w - pad * 0.9}" height="${panelH}" rx="20" fill="url(#panelGrad)" filter="url(#softShadow)"/>
-    <path d="M${pad * 0.45} ${panelY + panelH} H${w - pad * 0.45}" stroke="#000" stroke-opacity="0.14" stroke-width="2"/>
-    <g class="glow">
-      <rect x="${x - 18}" y="${y - 18}" width="${logoFrame + 36}" height="${logoFrame + 36}" fill="none" class="borderStroke" stroke-width="8"/>
-      <rect x="${x}" y="${y}" width="${logoFrame}" height="${logoFrame}" fill="${rgba(state.bgColor, 0.35)}" class="borderStroke" stroke-width="4"/>
-      <image href="${logoSrc}" x="${imageX}" y="${imageY}" width="${logoImage}" height="${logoImage}" preserveAspectRatio="xMidYMid meet"/>
-      <path d="M${x-18} ${y+42} V${y-18} H${x+42} M${x+logoFrame-42} ${y-18} H${x+logoFrame+18} V${y+42} M${x+logoFrame+18} ${y+logoFrame-42} V${y+logoFrame+18} H${x+logoFrame-42} M${x+42} ${y+logoFrame+18} H${x-18} V${y+logoFrame-42}" fill="none" class="accentStroke" stroke-width="7"/>
+    <g filter="url(#liquidShadow)">
+      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="rgba(255,255,255,${0.04 + depth * 0.04})"/>
+      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#glassFill)"/>
+      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#glassGlowA)"/>
+      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#glassGlowB)"/>
+      <rect x="${card.x + redOffset}" y="${card.y + redOffset * 0.32}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="none" stroke="#ff7adf" stroke-opacity="${edgeOpacity}" stroke-width="${3 + dispersion * 4}"/>
+      <rect x="${card.x - blueOffset}" y="${card.y - blueOffset * 0.22}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="none" stroke="#83e9ff" stroke-opacity="${edgeOpacity * 0.82}" stroke-width="${2 + dispersion * 3}"/>
+      <rect x="${card.x + 2}" y="${card.y + 2}" width="${card.width - 4}" height="${card.height - 4}" rx="${card.radius - 2}" fill="none" stroke="url(#glassBorder)" stroke-width="5"/>
+      <rect x="${card.x + 18}" y="${card.y + 18}" width="${card.width - 36}" height="${card.height - 36}" rx="${card.radius - 18}" fill="none" stroke="#ffffff" stroke-opacity="${0.18 + depth * 0.18}" stroke-width="1.8"/>
+      <path d="M${card.x + 90} ${card.y + 76} C${card.x + 360} ${card.y + 10}, ${card.x + 700} ${card.y + 20}, ${card.x + 1020} ${card.y + 82}" fill="none" stroke="#fff" stroke-opacity="${0.22 + depth * 0.24}" stroke-width="7" stroke-linecap="round"/>
+      <path d="M${card.x + 60} ${card.y + card.height - 88} C${card.x + 380} ${card.y + card.height - 22}, ${card.x + card.width - 360} ${card.y + card.height - 12}, ${card.x + card.width - 88} ${card.y + card.height - 86}" fill="none" stroke="#ffffff" stroke-opacity="${0.11 + depth * 0.15}" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <g filter="url(#softLogoShadow)">
+      <rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="44" fill="rgba(255,255,255,.16)" stroke="#ffffff" stroke-opacity=".5" stroke-width="2.4"/>
+      ${logoImage}
+      <rect x="${logoBox.x + 8}" y="${logoBox.y + 8}" width="${logoBox.width - 16}" height="${logoBox.height - 16}" rx="36" fill="none" stroke="#ffffff" stroke-opacity=".28" stroke-width="1.4"/>
     </g>
     <g class="font-main textFill">
-      <text x="${contentX}" y="${panelY + 98}" class="subtitle" font-size="38">${escapeXml(state.subTitle)}</text>
-      <text x="${contentX}" y="${panelY + 220}" class="title" font-size="70">${escapeXml(state.mainTitle)}</text>
-      <line x1="${contentX}" y1="${panelY + 278}" x2="${contentX + contentW}" y2="${panelY + 278}" class="line" stroke-width="3"/>
-      <text x="${contentX}" y="${panelY + 362}" class="desc mutedFill" font-size="42">
-        ${descLines.map((line, i) => `<tspan x="${contentX}" dy="${i === 0 ? 0 : 62}">${escapeXml(line)}</tspan>`).join("")}
+      <text x="${contentX}" y="${card.y + 134}" class="subtitle" font-size="42" opacity=".88">${escapeXml(state.subTitle)}</text>
+      <text x="${contentX}" y="${titleY}" class="title" font-size="84">${escapeXml(state.mainTitle)}</text>
+      <line x1="${contentX}" y1="${lineY}" x2="${card.x + card.width - 126}" y2="${lineY}" stroke="#ffffff" stroke-opacity="${0.25 + depth * 0.18}" stroke-width="2"/>
+      <text x="${contentX}" y="${lineY + 82}" class="desc mutedFill" font-size="44">
+        ${descLines.map((line, i) => `<tspan x="${contentX}" dy="${i === 0 ? 0 : 64}">${escapeXml(line)}</tspan>`).join("")}
       </text>
-      ${footer ? `<text x="${contentX}" y="${panelY + panelH - 58}" class="tiny accentFill" font-size="24">${escapeXml(footer)}</text>` : ""}
-    </g>
-  `;
-}
-
-function renderSquareOrPoster() {
-  const w = state.width;
-  const h = state.height;
-  const pad = Math.round(w * 0.075);
-  const logoFrame = state.layout === "square" ? 430 : 420;
-  const logoImage = Math.round(logoFrame * state.logoScale / 100);
-  const logoX = Math.round((w - logoFrame) / 2);
-  const imageX = Math.round((w - logoImage) / 2);
-  const top = pad + 80;
-  const imageY = top + Math.round((logoFrame - logoImage) / 2);
-  const titleY = top + logoFrame + 140;
-  const descY = titleY + 190;
-  const descLines = wrapText(state.description, state.layout === "square" ? 20 : 18, state.layout === "square" ? 5 : 7);
-  const logoSrc = state.logo || buildDefaultLogo();
-  const footer = state.footerText.trim();
-
-  return `
-    <rect x="${pad}" y="${pad}" width="${w - pad * 2}" height="${h - pad * 2}" rx="36" fill="${rgba(state.bgColor, state.panelOpacity / 100)}" class="borderStroke" stroke-width="8" filter="url(#softShadow)"/>
-    <path d="M${pad + 42} ${pad} H${w - pad - 42} M${pad + 42} ${h-pad} H${w-pad-42} M${pad} ${pad+42} V${h-pad-42} M${w-pad} ${pad+42} V${h-pad-42}" class="accentStroke" stroke-width="6" opacity=".82"/>
-    <g class="glow">
-      <rect x="${logoX - 22}" y="${top - 22}" width="${logoFrame + 44}" height="${logoFrame + 44}" fill="none" class="borderStroke" stroke-width="7"/>
-      <image href="${logoSrc}" x="${imageX}" y="${imageY}" width="${logoImage}" height="${logoImage}" preserveAspectRatio="xMidYMid meet"/>
-    </g>
-    <g class="font-main textFill" text-anchor="middle">
-      <text x="${w/2}" y="${titleY}" class="subtitle" font-size="40">${escapeXml(state.subTitle)}</text>
-      <text x="${w/2}" y="${titleY + 100}" class="title" font-size="76">${escapeXml(state.mainTitle)}</text>
-      <line x1="${pad + 90}" y1="${titleY + 155}" x2="${w - pad - 90}" y2="${titleY + 155}" class="line" stroke-width="3"/>
-      <text x="${w/2}" y="${descY}" class="desc mutedFill" font-size="42">
-        ${descLines.map((line, i) => `<tspan x="${w/2}" dy="${i === 0 ? 0 : 64}">${escapeXml(line)}</tspan>`).join("")}
-      </text>
-      ${footer ? `<text x="${w/2}" y="${h - pad - 78}" class="tiny accentFill" font-size="24">${escapeXml(footer)}</text>` : ""}
-    </g>
-  `;
+    </g>`;
 }
 
 function renderSvg() {
-  svg.setAttribute("viewBox", `0 0 ${state.width} ${state.height}`);
-  svg.setAttribute("width", state.width);
-  svg.setAttribute("height", state.height);
-  const content = state.layout === "wide" ? renderWide() : renderSquareOrPoster();
-  svg.innerHTML = `${styleBlock()}${buildDefs()}${content}`;
+  const w = state.width;
+  const h = state.height;
+  const bgSrc = state.background || buildDefaultBackground();
+  const card = { x: 188, y: 236, width: 1556, height: 690, radius: 126 };
+  const logoBox = { x: card.x + 118, y: card.y + 172, width: 340, height: 340 };
+  const bgArea = { x: 0, y: 0, width: w, height: h };
+
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+  svg.innerHTML = `
+    ${styleBlock()}
+    ${buildDefs(card, logoBox)}
+    ${imageLayer(bgSrc, "canvasClip", bgArea, state.backgroundScale, state.backgroundX, state.backgroundY, "xMidYMid slice")}
+    <rect width="100%" height="100%" fill="url(#shade)"/>
+    ${renderCard(card, logoBox)}
+  `;
   svg.style.width = `${state.zoom}%`;
-  dpiInfo.textContent = `300dpi · ${state.width}×${state.height}px`;
-}
-
-function applyPreset(key) {
-  const preset = presets[key];
-  state.preset = key;
-  Object.assign(state, preset);
-  $("bgColor").value = state.bgColor;
-  $("accentColor").value = state.accentColor;
-  $("borderColor").value = state.borderColor;
-  $("textColor").value = state.textColor;
-  if (preset.softColor) state.softColor = preset.softColor;
-  $("panelOpacity").value = state.panelOpacity;
-  $("ornamentLevel").value = state.ornamentLevel;
-  $("backgroundOpacity").value = state.backgroundOpacity;
-  document.querySelectorAll(".preset-card").forEach((card) => card.classList.toggle("active", card.dataset.preset === key));
-  renderSvg();
-}
-
-function setLayout(layout) {
-  Object.assign(state, { layout }, layouts[layout]);
-  $("sizePreset").value = layout;
-  document.querySelectorAll("#layoutGroup button").forEach((button) => button.classList.toggle("active", button.dataset.layout === layout));
-  renderSvg();
+  dpiInfo.textContent = `300dpi · ${w}×${h}px · 参考图比例`;
 }
 
 function readFileAsDataUrl(file, callback) {
@@ -345,58 +290,60 @@ async function downloadPng() {
     canvas.width = state.width;
     canvas.height = state.height;
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = state.bgColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
     URL.revokeObjectURL(url);
     canvas.toBlob((pngBlob) => {
       if (!pngBlob) return;
-      download(`achievement-unlock-${state.width}x${state.height}-300dpi.png`, URL.createObjectURL(pngBlob));
+      const pngUrl = URL.createObjectURL(pngBlob);
+      download(`liquid-glass-achievement-${state.width}x${state.height}-300dpi.png`, pngUrl);
+      setTimeout(() => URL.revokeObjectURL(pngUrl), 1000);
     }, "image/png", 1);
   };
   img.src = url;
 }
 
-function buildPresetGrid() {
-  const grid = $("presetGrid");
-  grid.innerHTML = Object.entries(presets).map(([key, preset]) => `
-    <button class="preset-card ${key === state.preset ? "active" : ""}" data-preset="${key}">
-      <span class="preset-swatch"><i style="background:${preset.bgColor}"></i><i style="background:${preset.accentColor}"></i><i style="background:${preset.borderColor}"></i></span>
-      ${preset.name}
-    </button>
-  `).join("");
-  grid.addEventListener("click", (event) => {
-    const card = event.target.closest(".preset-card");
-    if (card) applyPreset(card.dataset.preset);
-  });
-}
-
 function bindEvents() {
-  ["mainTitle", "subTitle", "description", "footerText"].forEach((id) => {
+  ["mainTitle", "subTitle", "description"].forEach((id) => {
     $(id).addEventListener("input", (event) => {
       state[id] = event.target.value;
       renderSvg();
     });
   });
-  ["bgColor", "accentColor", "borderColor", "textColor"].forEach((id) => {
+
+  ["accentColor", "textColor"].forEach((id) => {
     $(id).addEventListener("input", (event) => {
       state[id] = event.target.value;
       renderSvg();
     });
   });
-  ["panelOpacity", "ornamentLevel", "backgroundOpacity", "logoScale", "previewZoom"].forEach((id) => {
+
+  [
+    "backgroundScale", "backgroundX", "backgroundY",
+    "logoScale", "logoX", "logoY",
+    "glassDepth", "glassDispersion", "cardOpacity", "previewZoom"
+  ].forEach((id) => {
     $(id).addEventListener("input", (event) => {
       const key = id === "previewZoom" ? "zoom" : id;
       state[key] = Number(event.target.value);
       renderSvg();
     });
   });
+
   $("fontFamily").addEventListener("change", (event) => {
     state.fontFamily = event.target.value;
     renderSvg();
   });
-  $("logoInput").addEventListener("change", (event) => readFileAsDataUrl(event.target.files[0], (url) => { state.logo = url; renderSvg(); }));
-  $("backgroundInput").addEventListener("change", (event) => readFileAsDataUrl(event.target.files[0], (url) => { state.background = url; renderSvg(); }));
+
+  $("logoInput").addEventListener("change", (event) => readFileAsDataUrl(event.target.files[0], (url) => {
+    state.logo = url;
+    renderSvg();
+  }));
+
+  $("backgroundInput").addEventListener("change", (event) => readFileAsDataUrl(event.target.files[0], (url) => {
+    state.background = url;
+    renderSvg();
+  }));
+
   $("fontInput").addEventListener("change", (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -409,44 +356,52 @@ function bindEvents() {
       renderSvg();
     });
   });
-  $("clearBackground").addEventListener("click", () => { state.background = ""; $("backgroundInput").value = ""; renderSvg(); });
-  $("layoutGroup").addEventListener("click", (event) => {
-    if (event.target.dataset.layout) setLayout(event.target.dataset.layout);
+
+  $("clearBackground").addEventListener("click", () => {
+    state.background = "";
+    $("backgroundInput").value = "";
+    renderSvg();
   });
-  $("sizePreset").addEventListener("change", (event) => setLayout(event.target.value));
+
   $("downloadPng").addEventListener("click", downloadPng);
   $("downloadSvg").addEventListener("click", () => {
     const blob = new Blob([serializeSvg()], { type: "image/svg+xml;charset=utf-8" });
-    download(`achievement-unlock-${state.width}x${state.height}.svg`, URL.createObjectURL(blob));
+    const svgUrl = URL.createObjectURL(blob);
+    download(`liquid-glass-achievement-${state.width}x${state.height}.svg`, svgUrl);
+    setTimeout(() => URL.revokeObjectURL(svgUrl), 1000);
   });
+
   $("resetDemo").addEventListener("click", () => {
     Object.assign(state, {
       logo: "",
       background: "",
       customFontName: "",
       mainTitle: "人类的护道者",
-      subTitle: "恭喜获得新成就！",
-      description: "世界需要人类，而人类需要护道者。上传你的 Logo，生成一张带有游戏成就感的介绍卡片。",
-      footerText: "UNLOCKED · DESIGN READY · 300DPI",
-      ornamentLevel: 0,
-      backgroundOpacity: 34,
-      logoScale: 100,
+      subTitle: "成就解锁",
+      description: "世界需要人类，而人类需要护道者。上传你的 Logo 与底图，生成一张具有高级玻璃质感的游戏成就介绍卡片。",
+      accentColor: "#f5f7ff",
+      textColor: "#ffffff",
+      cardOpacity: 38,
+      glassDepth: 66,
+      glassDispersion: 30,
+      backgroundScale: 100,
+      backgroundX: 0,
+      backgroundY: 0,
+      logoScale: 120,
+      logoX: 0,
+      logoY: 0,
       fontFamily: "system",
       zoom: 72
     });
-    $("mainTitle").value = state.mainTitle;
-    $("subTitle").value = state.subTitle;
-    $("description").value = state.description;
-    $("footerText").value = state.footerText;
-    $("ornamentLevel").value = state.ornamentLevel;
-    $("backgroundOpacity").value = state.backgroundOpacity;
-    $("logoScale").value = state.logoScale;
-    $("fontFamily").value = state.fontFamily;
-    $("previewZoom").value = state.zoom;
-    applyPreset("q-ul");
+    ["mainTitle", "subTitle", "description", "accentColor", "textColor", "cardOpacity", "glassDepth", "glassDispersion", "backgroundScale", "backgroundX", "backgroundY", "logoScale", "logoX", "logoY", "fontFamily", "previewZoom"].forEach((id) => {
+      const key = id === "previewZoom" ? "zoom" : id;
+      $(id).value = state[key];
+    });
+    $("logoInput").value = "";
+    $("backgroundInput").value = "";
+    renderSvg();
   });
 }
 
-buildPresetGrid();
 bindEvents();
 renderSvg();

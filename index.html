@@ -11,8 +11,8 @@
     <section class="hero">
       <div>
         <p class="eyebrow">Achievement Unlock Intro Generator</p>
-        <h1>游戏成就跳出卡片 Logo 介绍生成工具</h1>
-        <p class="hero-copy">上传 Logo、填写标题与介绍文案，选择成就卡片风格，即时预览并导出适合印刷与发布的 300dpi PNG 图片。</p>
+        <h1>Liquid Glass 游戏成就卡片生成工具</h1>
+        <p class="hero-copy">上传底图与 Logo，像视频封面裁切一样调整保留区域；中间成就卡片采用 Apple 风格的 liquid glass 视觉，可调节色散、深度与透明度，并导出同参考图比例的 300dpi PNG。</p>
       </div>
       <div class="hero-actions">
         <button class="primary" id="downloadPng">导出 300dpi PNG</button>
@@ -34,73 +34,73 @@
           </label>
           <label>
             副标题
-            <input type="text" id="subTitle" value="恭喜获得新成就！" maxlength="36" />
+            <input type="text" id="subTitle" value="成就解锁" maxlength="36" />
           </label>
           <label>
             介绍文案
-            <textarea id="description" rows="4" maxlength="160">世界需要人类，而人类需要护道者。上传你的 Logo，生成一张带有游戏成就感的介绍卡片。</textarea>
-          </label>
-          <label>
-            底部标签（可留空）
-            <input type="text" id="footerText" value="UNLOCKED · DESIGN READY · 300DPI" maxlength="64" placeholder="留空则不显示底部英文标签" />
+            <textarea id="description" rows="4" maxlength="160">世界需要人类，而人类需要护道者。上传你的 Logo 与底图，生成一张具有高级玻璃质感的游戏成就介绍卡片。</textarea>
           </label>
         </details>
 
         <details open>
-          <summary>版式与导出</summary>
-          <div class="segmented" id="layoutGroup" role="radiogroup" aria-label="版式">
-            <button data-layout="wide" class="active">横版</button>
-            <button data-layout="square">方图</button>
-            <button data-layout="poster">竖版</button>
-          </div>
+          <summary>底图上传与裁切</summary>
           <label>
-            画布规格
-            <select id="sizePreset">
-              <option value="wide">横版 6×3 inch / 1800×900px</option>
-              <option value="square">方图 4×4 inch / 1200×1200px</option>
-              <option value="poster">竖版 4×6 inch / 1200×1800px</option>
-            </select>
-          </label>
-          <label>
-            缩放预览
-            <input type="range" id="previewZoom" min="45" max="100" value="72" />
-          </label>
-        </details>
-
-        <details open>
-          <summary>风格预设</summary>
-          <div class="preset-grid" id="presetGrid"></div>
-          <label>
-            自定义底纹 / 背景
+            底图图片
             <input type="file" id="backgroundInput" accept="image/*" />
           </label>
           <label>
-            底纹透明度
-            <input type="range" id="backgroundOpacity" min="0" max="100" value="34" />
+            底图缩放
+            <input type="range" id="backgroundScale" min="100" max="240" value="100" />
           </label>
-          <button class="link-button" id="clearBackground">移除自定义底纹</button>
+          <label>
+            底图水平位置
+            <input type="range" id="backgroundX" min="-100" max="100" value="0" />
+          </label>
+          <label>
+            底图垂直位置
+            <input type="range" id="backgroundY" min="-100" max="100" value="0" />
+          </label>
+          <button class="link-button" id="clearBackground">移除底图</button>
         </details>
 
         <details open>
-          <summary>元素细调</summary>
-          <div class="two-col">
-            <label>背景色<input type="color" id="bgColor" value="#f8f4ed" /></label>
-            <label>强调色<input type="color" id="accentColor" value="#9ac7cd" /></label>
-            <label>边框色<input type="color" id="borderColor" value="#b88a3a" /></label>
-            <label>文字色<input type="color" id="textColor" value="#453f3a" /></label>
-          </div>
-          <label>
-            卡片透明度
-            <input type="range" id="panelOpacity" min="45" max="95" value="72" />
-          </label>
-          <label>
-            默认装饰强度（默认关闭）
-            <input type="range" id="ornamentLevel" min="0" max="100" value="0" />
-          </label>
+          <summary>Logo 裁切</summary>
           <label>
             Logo 缩放
-            <input type="range" id="logoScale" min="55" max="140" value="100" />
+            <input type="range" id="logoScale" min="100" max="260" value="120" />
           </label>
+          <label>
+            Logo 水平位置
+            <input type="range" id="logoX" min="-100" max="100" value="0" />
+          </label>
+          <label>
+            Logo 垂直位置
+            <input type="range" id="logoY" min="-100" max="100" value="0" />
+          </label>
+        </details>
+
+        <details open>
+          <summary>Liquid Glass</summary>
+          <label>
+            玻璃深度
+            <input type="range" id="glassDepth" min="0" max="100" value="66" />
+          </label>
+          <label>
+            边缘色散
+            <input type="range" id="glassDispersion" min="0" max="100" value="30" />
+          </label>
+          <label>
+            卡片透明度
+            <input type="range" id="cardOpacity" min="18" max="68" value="38" />
+          </label>
+          <div class="two-col">
+            <label>强调色<input type="color" id="accentColor" value="#f5f7ff" /></label>
+            <label>文字色<input type="color" id="textColor" value="#ffffff" /></label>
+          </div>
+        </details>
+
+        <details>
+          <summary>文字与预览</summary>
           <label>
             中文字体
             <select id="fontFamily">
@@ -114,6 +114,10 @@
             上传自定义字体（可选）
             <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2,font/*" />
           </label>
+          <label>
+            缩放预览
+            <input type="range" id="previewZoom" min="42" max="100" value="72" />
+          </label>
         </details>
       </aside>
 
@@ -121,23 +125,23 @@
         <div class="preview-toolbar">
           <div>
             <strong>所见即所得预览</strong>
-            <span id="dpiInfo">300dpi · 1800×900px</span>
+            <span id="dpiInfo">300dpi · 1932×1360px · 参考图比例</span>
           </div>
           <button class="ghost small" id="resetDemo">恢复示例</button>
         </div>
         <div class="preview-stage" id="previewStage">
-          <svg id="achievementSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="游戏成就卡片预览"></svg>
+          <svg id="achievementSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Liquid Glass 游戏成就卡片预览"></svg>
         </div>
       </section>
     </section>
 
     <section class="product-notes">
-      <h2>完善后的产品能力范围</h2>
+      <h2>当前版本能力</h2>
       <div class="note-grid">
-        <article><h3>输入完整</h3><p>Logo、主标题、副标题、介绍文案、背景图、中文字体均可替换，覆盖常见成就卡片生产流程。</p></article>
-        <article><h3>可控风格</h3><p>沿用宁荣荣 2026 Birthday H5 的四象限配色：荆棘 × 不忘、繁花 × 不忘、荆棘 × 寻常、繁花 × 寻常，并支持逐元素改色。</p></article>
-        <article><h3>即时预览</h3><p>所有设置都会实时反映到 SVG 画布，用户不需要导出后再反复试错。</p></article>
-        <article><h3>交付标准</h3><p>按 300dpi 的像素规格导出 PNG，同时保留 SVG 版本，方便二次编辑、印刷或用于视频片头素材。</p></article>
+        <article><h3>固定比例</h3><p>生成图比例与参考图一致，默认输出 1932×1360px，满足 300dpi 高清导出。</p></article>
+        <article><h3>双层结构</h3><p>后方为用户上传底图，前方为 Liquid Glass 成就卡片，结构更清晰。</p></article>
+        <article><h3>封面裁切</h3><p>底图和 Logo 都支持缩放、横向位移、纵向位移，控制区域内保留内容。</p></article>
+        <article><h3>玻璃质感</h3><p>卡片支持调节玻璃深度、边缘色散和透明度，边框更贴近液态玻璃效果。</p></article>
       </div>
     </section>
   </main>
