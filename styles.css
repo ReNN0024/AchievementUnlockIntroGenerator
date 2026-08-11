@@ -84,8 +84,17 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 .preset-head { display: flex; justify-content: space-between; align-items: center; color: #303238; font-size: 12px; font-weight: 600; }
 .preset-head strong { color: var(--muted); font-weight: 500; }
 .glass-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-.glass-preset { position: relative; min-height: 62px; border: 1px solid var(--control-line); border-radius: 11px; padding: 8px; color: #45484f; background: #fff; text-align: left; font-size: 12px; font-weight: 600; }
-.glass-preset::before { content: ""; display: block; height: 6px; margin-bottom: 8px; border-radius: 4px; background: linear-gradient(90deg, #eef1f5, #aeb6c4, #eef1f5); }
+.glass-preset { position: relative; display: grid; gap: 6px; min-height: 78px; border: 1px solid var(--control-line); border-radius: 11px; padding: 8px; color: #45484f; background: #fff; text-align: left; font-size: 12px; font-weight: 600; }
+.preset-swatch { position: relative; display: block; height: 34px; overflow: hidden; border-radius: 9px; border: 1px solid rgba(255,255,255,.68); background: linear-gradient(135deg, #dfe4ec, #f8fafc 46%, #bcc6d5); box-shadow: inset 0 1px 0 rgba(255,255,255,.82), inset 0 -10px 18px rgba(0,0,0,.05); }
+.preset-swatch i, .preset-swatch b { position: absolute; inset: 6px 8px; border-radius: 7px; content: ""; }
+.preset-swatch i { display: block; background: rgba(255,255,255,.38); backdrop-filter: blur(6px); box-shadow: inset 0 1px 0 rgba(255,255,255,.72); }
+.preset-swatch b { display: block; inset: auto 8px 7px; height: 6px; background: rgba(255,255,255,.34); }
+.glass-preset.clear .preset-swatch { background: linear-gradient(135deg, #f7fbff, #e9f2fb 52%, #d7e3ef); }
+.glass-preset.clear .preset-swatch i { background: rgba(255,255,255,.28); }
+.glass-preset.standard .preset-swatch { background: linear-gradient(135deg, #d8dee8, #f7f8fb 44%, #9facbf); }
+.glass-preset.standard .preset-swatch i { background: rgba(255,255,255,.44); }
+.glass-preset.dark .preset-swatch { background: linear-gradient(135deg, #566070, #c7ced8 42%, #2d3440); }
+.glass-preset.dark .preset-swatch i { background: rgba(255,255,255,.24); box-shadow: inset 0 1px 0 rgba(255,255,255,.42), 0 10px 18px rgba(0,0,0,.16); }
 .glass-preset.active { border-color: var(--accent); background: #f5f9ff; box-shadow: inset 0 0 0 1px rgba(0,113,227,.13); }
 .glass-preset.active::after { content: "✓"; position: absolute; right: 8px; top: 5px; color: var(--accent); font-size: 12px; }
 .theme-block { border-top: 1px solid var(--line); padding-top: 12px; }
