@@ -13,8 +13,8 @@ const DEFAULTS = {
   backgroundScale: 100, backgroundX: 0, backgroundY: 0, backgroundOpacity: 100,
   logoScale: 120, logoX: 0, logoY: 0, logoStyle: "floating",
   glassPreset: "standard", glassDepth: 58, cardOpacity: 22, glassDispersion: 0,
-  subtitleTitleGap: 122, titleRuleGap: 142, ruleDescGap: 124, descLineGap: 70,
-  subtitleLetterSpacing: 6, titleLetterSpacing: 1.5, descLetterSpacing: .5,
+  subtitleTitleGap: 110, titleRuleGap: 118, ruleDescGap: 88, descLineGap: 62,
+  subtitleLetterSpacing: 4, titleLetterSpacing: 0, descLetterSpacing: 0,
   descriptionBoxWidth: 930, descriptionBoxHeight: 240, zoom: 72
 };
 const GLASS_PRESETS = {
@@ -95,7 +95,6 @@ function buildDefs(card, logoBox) {
   const tintAlpha = .06 + state.cardOpacity / 100 * .28;
   const ambientAlpha = .14 + depth * .12;
   const contactAlpha = .10 + depth * .06;
-  const readabilityColor = luminance(hexToRgb(state.textColor)) > .5 ? "#000" : "#fff";
   const logoRadius = 60;
   return `<defs>
     <clipPath id="canvasClip"><rect width="${state.width}" height="${state.height}"/></clipPath>
@@ -105,15 +104,13 @@ function buildDefs(card, logoBox) {
     <filter id="contactShadow" x="-8%" y="-10%" width="116%" height="124%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="${contactAlpha}"/></filter>
     <filter id="ambientShadow" x="-16%" y="-28%" width="132%" height="164%"><feDropShadow dx="0" dy="28" stdDeviation="35" flood-color="#000" flood-opacity="${ambientAlpha}"/></filter>
     <filter id="floatingLogoShadow" x="-26%" y="-30%" width="152%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".18"/></filter>
-    <filter id="textShadow" x="-8%" y="-12%" width="116%" height="124%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.6" flood-color="#000" flood-opacity=".26"/></filter>
+    <filter id="textShadow" x="-8%" y="-12%" width="116%" height="124%"><feDropShadow dx="0" dy="1.4" stdDeviation="1.5" flood-color="#000" flood-opacity=".18"/></filter>
     <linearGradient id="glassTint" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff" stop-opacity="${tintAlpha}"/><stop offset=".45" stop-color="#fff" stop-opacity="${tintAlpha*.56}"/><stop offset="1" stop-color="#ebf0f8" stop-opacity="${tintAlpha*.42}"/></linearGradient>
     <linearGradient id="borderGradient" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff" stop-opacity=".62"/><stop offset=".32" stop-color="#fff" stop-opacity=".40"/><stop offset=".66" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity=".24"/></linearGradient>
     <linearGradient id="topHighlight" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff" stop-opacity=".28"/><stop offset=".50" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
     <linearGradient id="bottomShade" x1="0" y1="0" x2="0" y2="1"><stop offset=".68" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient>
     <radialGradient id="surfaceHighlight" cx="10%" cy="8%" r="60%"><stop stop-color="#fff" stop-opacity=".14"/><stop offset=".58" stop-color="#fff" stop-opacity=".035"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
     <radialGradient id="coolReflection" cx="90%" cy="90%" r="52%"><stop stop-color="#dce7ff" stop-opacity=".055"/><stop offset="1" stop-color="#dce7ff" stop-opacity="0"/></radialGradient>
-    <linearGradient id="textReadability" x1="0" y1="0" x2="1" y2="0"><stop stop-color="${readabilityColor}" stop-opacity="0"/><stop offset=".34" stop-color="${readabilityColor}" stop-opacity=".045"/><stop offset="1" stop-color="${readabilityColor}" stop-opacity=".14"/></linearGradient>
-    <linearGradient id="descReadability" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${readabilityColor}" stop-opacity="0"/><stop offset=".34" stop-color="${readabilityColor}" stop-opacity=".09"/><stop offset="1" stop-color="${readabilityColor}" stop-opacity=".18"/></linearGradient>
     <g id="cardShape"><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}"/></g>
     <g id="logoShape"><rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="${logoRadius}"/></g>
   </defs>`;
@@ -154,12 +151,11 @@ function renderCard(card, logoBox) {
   const availableHeight = card.y + card.height - bottomSafePadding - descTopY;
   const cardMaxLines = Math.max(1, 1 + Math.floor(Math.max(0, availableHeight - descFontSize) / state.descLineGap));
   const maxLines = Math.max(1, Math.min(boxMaxLines, cardMaxLines));
-  const descBlockHeight = Math.min(state.descriptionBoxHeight, descFontSize + (maxLines - 1) * state.descLineGap);
   const title = fitTitle(state.mainTitle, contentRight - contentX); const desc = descriptionLines(maxLines);
   $("titleWarning").textContent = title.overflow ? "标题过长，已缩小至最小字号；请缩短文字以避免导出溢出。" : "";
   $("descriptionWarning").textContent = desc.overflow ? "内容过长，导出时将以省略号显示最后一行。" : "";
   const dispersion = state.glassDispersion ? state.glassDispersion / 20 : 0;
-  const glass = `<g aria-label="system frosted glass card"><use href="#cardShape" filter="url(#ambientShadow)"/><use href="#cardShape" filter="url(#contactShadow)"/>${imageLayer(bg,"cardClip",{x:0,y:0,width:state.width,height:state.height},state.backgroundScale,state.backgroundX,state.backgroundY,{filter:"url(#frostedBlur)",expand:1.04})}<rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#glassTint)" clip-path="url(#cardClip)"/><rect x="${contentX - 58}" y="${card.y + 40}" width="${contentRight - contentX + 58}" height="${card.height - 80}" fill="url(#textReadability)" clip-path="url(#cardClip)"/><rect x="${contentX - 44}" y="${Math.max(descTopY - 22, card.y + 42)}" width="${state.descriptionBoxWidth + 88}" height="${descBlockHeight + 52}" rx="32" fill="url(#descReadability)" clip-path="url(#cardClip)"/><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#surfaceHighlight)" clip-path="url(#cardClip)"/><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#coolReflection)" clip-path="url(#cardClip)"/>${dispersion ? `<use href="#cardShape" transform="translate(${-dispersion},0)" fill="none" stroke="#79b7ff" stroke-opacity=".055" stroke-width="1"/><use href="#cardShape" transform="translate(${dispersion},0)" fill="none" stroke="#ff8a9d" stroke-opacity=".045" stroke-width="1"/>` : ""}<use href="#cardShape" fill="none" stroke="url(#borderGradient)" stroke-width="2.5"/><use href="#cardShape" fill="none" stroke="url(#topHighlight)" stroke-width="1"/><use href="#cardShape" fill="none" stroke="url(#bottomShade)" stroke-width="1"/></g>`;
+  const glass = `<g aria-label="system frosted glass card"><use href="#cardShape" filter="url(#ambientShadow)"/><use href="#cardShape" filter="url(#contactShadow)"/>${imageLayer(bg,"cardClip",{x:0,y:0,width:state.width,height:state.height},state.backgroundScale,state.backgroundX,state.backgroundY,{filter:"url(#frostedBlur)",expand:1.04})}<rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#glassTint)" clip-path="url(#cardClip)"/><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#surfaceHighlight)" clip-path="url(#cardClip)"/><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#coolReflection)" clip-path="url(#cardClip)"/>${dispersion ? `<use href="#cardShape" transform="translate(${-dispersion},0)" fill="none" stroke="#79b7ff" stroke-opacity=".055" stroke-width="1"/><use href="#cardShape" transform="translate(${dispersion},0)" fill="none" stroke="#ff8a9d" stroke-opacity=".045" stroke-width="1"/>` : ""}<use href="#cardShape" fill="none" stroke="url(#borderGradient)" stroke-width="2.5"/><use href="#cardShape" fill="none" stroke="url(#topHighlight)" stroke-width="1"/><use href="#cardShape" fill="none" stroke="url(#bottomShade)" stroke-width="1"/></g>`;
   const logoPlacement = imageLayer(logo, "logoClip", logoBox, state.logoScale, state.logoX, state.logoY, { preserve: "xMidYMid slice" });
   const logoLayer = state.logoStyle === "glass" ? `<g aria-label="logo glass container"><use href="#logoShape" filter="url(#floatingLogoShadow)"/>${imageLayer(bg,"logoClip",{x:0,y:0,width:state.width,height:state.height},state.backgroundScale,state.backgroundX,state.backgroundY,{filter:"url(#frostedBlur)",expand:1.04})}<use href="#logoShape" fill="url(#glassTint)"/><use href="#logoShape" fill="none" stroke="url(#borderGradient)" stroke-width="2"/><use href="#logoShape" fill="none" stroke="url(#topHighlight)" stroke-width="1"/>${logoPlacement}</g>` : `<g filter="url(#floatingLogoShadow)" aria-label="floating logo">${logoPlacement}</g>`;
   const lineWidth = Math.min(state.descriptionBoxWidth, contentRight - contentX);
