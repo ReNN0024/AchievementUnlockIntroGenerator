@@ -13,9 +13,9 @@ const DEFAULTS = {
   description: "世界需要人类，而人类需要护道者。\n上传你的 Logo 与底图，生成一张具有高级玻璃质感的游戏成就介绍卡片。",
   accentColor: "#f5f7ff",
   textColor: "#ffffff",
-  cardOpacity: 38,
-  glassDepth: 66,
-  glassDispersion: 30,
+  cardOpacity: 22,
+  glassDepth: 58,
+  glassDispersion: 5,
   backgroundScale: 100,
   backgroundX: 0,
   backgroundY: 0,
@@ -225,6 +225,21 @@ function imageLayer(src, clipId, area, scale, offsetX, offsetY, preserve = "xMid
   return `<image href="${src}" x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="${preserve}" opacity="${opacity}" clip-path="url(#${clipId})"/>`;
 }
 
+function backgroundCanvasLayer(src, clipId, scale, offsetX, offsetY, { opacity = 1, filter = "", expand = 1 } = {}) {
+  const baseWidth = state.width * (scale / 100);
+  const baseHeight = state.height * (scale / 100);
+  const width = baseWidth * expand;
+  const height = baseHeight * expand;
+  const maxPanX = Math.max(0, (baseWidth - state.width) / 2);
+  const maxPanY = Math.max(0, (baseHeight - state.height) / 2);
+  const baseX = (state.width - baseWidth) / 2 + (offsetX / 100) * maxPanX;
+  const baseY = (state.height - baseHeight) / 2 + (offsetY / 100) * maxPanY;
+  const x = baseX - (width - baseWidth) / 2;
+  const y = baseY - (height - baseHeight) / 2;
+  const filterAttr = filter ? ` filter="${filter}"` : "";
+  return `<image href="${src}" x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" opacity="${opacity}" clip-path="url(#${clipId})"${filterAttr}/>`;
+}
+
 function styleBlock() {
   const textSoft = rgba(state.textColor, 0.72);
   return `
@@ -242,86 +257,100 @@ function styleBlock() {
 
 function buildDefs(card, logoBox) {
   const depth = state.glassDepth / 100;
-  const dispersion = state.glassDispersion / 100;
-  const shadowOpacity = 0.18 + depth * 0.24;
-  const blur = 24 + depth * 48;
-  const cardOpacity = state.cardOpacity / 100;
-  const roughScale = 9 + depth * 8 + dispersion * 10;
-  const edgeBlur = 1.2 + depth * 1.8;
+  const blur = 18 + depth * 14;
+  const tintOpacity = state.cardOpacity / 100;
+  const contactOpacity = 0.1 + depth * 0.1;
+  const ambientOpacity = 0.16 + depth * 0.14;
+  const microShift = state.glassDispersion === 0 ? 0 : Math.min(1, state.glassDispersion / 100);
+  const microOpacity = state.glassDispersion === 0 ? 0 : Math.min(0.12, 0.018 + state.glassDispersion / 1000);
+
   return `
     <defs>
       <clipPath id="canvasClip"><rect x="0" y="0" width="${state.width}" height="${state.height}"/></clipPath>
       <clipPath id="cardClip"><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" ry="${card.radius}"/></clipPath>
       <clipPath id="logoClip"><rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="44" ry="44"/></clipPath>
-      <linearGradient id="glassFill" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#ffffff" stop-opacity="${cardOpacity + 0.1}"/>
-        <stop offset="0.24" stop-color="#ffffff" stop-opacity="${cardOpacity * 0.64}"/>
-        <stop offset="0.58" stop-color="#cbd5ff" stop-opacity="${Math.max(0.09, cardOpacity * 0.36)}"/>
-        <stop offset="1" stop-color="#ffffff" stop-opacity="${Math.max(0.08, cardOpacity * 0.24)}"/>
+
+      <filter id="frostedBlur" x="-8%" y="-14%" width="116%" height="128%" color-interpolation-filters="sRGB">
+        <feGaussianBlur stdDeviation="${blur}" edgeMode="duplicate" result="blurred"/>
+        <feColorMatrix in="blurred" type="saturate" values="1.08" result="saturated"/>
+        <feComponentTransfer in="saturated" result="crisp">
+          <feFuncR type="linear" slope="1.04" intercept="-0.02"/>
+          <feFuncG type="linear" slope="1.04" intercept="-0.02"/>
+          <feFuncB type="linear" slope="1.04" intercept="-0.02"/>
+        </feComponentTransfer>
+      </filter>
+
+      <filter id="contactShadow" x="-5%" y="-8%" width="110%" height="116%" color-interpolation-filters="sRGB">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
+        <feOffset in="blur" dx="0" dy="3" result="offset"/>
+        <feFlood flood-color="#000000" flood-opacity="${contactOpacity}" result="color"/>
+        <feComposite in="color" in2="offset" operator="in"/>
+      </filter>
+      <filter id="ambientShadow" x="-12%" y="-22%" width="124%" height="150%" color-interpolation-filters="sRGB">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="35" result="blur"/>
+        <feOffset in="blur" dx="0" dy="28" result="offset"/>
+        <feFlood flood-color="#000000" flood-opacity="${ambientOpacity}" result="color"/>
+        <feComposite in="color" in2="offset" operator="in"/>
+      </filter>
+      <filter id="logoShadow" x="-18%" y="-24%" width="136%" height="150%" color-interpolation-filters="sRGB">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="13" result="blur"/>
+        <feOffset in="blur" dx="0" dy="10" result="offset"/>
+        <feFlood flood-color="#000000" flood-opacity="0.20" result="color"/>
+        <feComposite in="color" in2="offset" operator="in"/>
+      </filter>
+
+      <linearGradient id="glassTint" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="${0.18 * tintOpacity}"/>
+        <stop offset="0.45" stop-color="#ffffff" stop-opacity="${0.10 * tintOpacity}"/>
+        <stop offset="1" stop-color="#ebf0f8" stop-opacity="${0.08 * tintOpacity}"/>
       </linearGradient>
-      <linearGradient id="glassSurface" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#ffffff" stop-opacity="${0.22 + depth * 0.18}"/>
-        <stop offset="0.48" stop-color="#ffffff" stop-opacity="0"/>
-        <stop offset="1" stop-color="#ffffff" stop-opacity="${0.08 + depth * 0.1}"/>
+      <linearGradient id="logoGlassTint" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="${0.2 * tintOpacity}"/>
+        <stop offset="0.48" stop-color="#ffffff" stop-opacity="${0.12 * tintOpacity}"/>
+        <stop offset="1" stop-color="#ebf0f8" stop-opacity="${0.09 * tintOpacity}"/>
       </linearGradient>
-      <linearGradient id="glassBorder" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#ffffff" stop-opacity="${0.94 + depth * 0.05}"/>
-        <stop offset="0.18" stop-color="#ffffff" stop-opacity="${0.34 + depth * 0.2}"/>
-        <stop offset="0.43" stop-color="#ffffff" stop-opacity="${0.18 + depth * 0.16}"/>
-        <stop offset="0.68" stop-color="${state.accentColor}" stop-opacity="${0.08 + dispersion * 0.18}"/>
-        <stop offset="1" stop-color="#ffffff" stop-opacity="${0.5 + depth * 0.22}"/>
+
+      <linearGradient id="cleanGlassBorder" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.62"/>
+        <stop offset="0.32" stop-color="#ffffff" stop-opacity="0.40"/>
+        <stop offset="0.66" stop-color="#ffffff" stop-opacity="0.16"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0.24"/>
       </linearGradient>
-      <linearGradient id="edgeRim" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#ffffff" stop-opacity="${0.9 + depth * 0.08}"/>
-        <stop offset="0.3" stop-color="#ffffff" stop-opacity="${0.2 + depth * 0.14}"/>
-        <stop offset="0.7" stop-color="#ffffff" stop-opacity="${0.1 + dispersion * 0.12}"/>
-        <stop offset="1" stop-color="#ffffff" stop-opacity="${0.32 + depth * 0.22}"/>
+      <linearGradient id="innerTopHighlight" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.26"/>
+        <stop offset="0.62" stop-color="#ffffff" stop-opacity="0.08"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
       </linearGradient>
-      <radialGradient id="glassGlowA" cx="10%" cy="8%" r="60%">
-        <stop stop-color="#ffffff" stop-opacity="${0.26 + depth * 0.22}"/>
+      <linearGradient id="innerBottomShade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+        <stop offset="1" stop-color="#000000" stop-opacity="0.12"/>
+      </linearGradient>
+      <radialGradient id="surfaceHighlight" cx="12%" cy="10%" r="58%">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.14"/>
+        <stop offset="0.52" stop-color="#ffffff" stop-opacity="0.055"/>
         <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
       </radialGradient>
-      <radialGradient id="glassGlowB" cx="82%" cy="86%" r="58%">
-        <stop stop-color="${state.accentColor}" stop-opacity="${0.15 + dispersion * 0.2}"/>
-        <stop offset="1" stop-color="${state.accentColor}" stop-opacity="0"/>
+      <radialGradient id="coolReflection" cx="88%" cy="90%" r="48%">
+        <stop offset="0" stop-color="#dfe8ff" stop-opacity="0.06"/>
+        <stop offset="1" stop-color="#dfe8ff" stop-opacity="0"/>
       </radialGradient>
-      <filter id="liquidShadow" x="-20%" y="-30%" width="140%" height="170%">
-        <feDropShadow dx="0" dy="${22 + depth * 18}" stdDeviation="${blur}" flood-color="#000000" flood-opacity="${shadowOpacity}"/>
-      </filter>
-      <filter id="roughGlassEdge" x="-10%" y="-16%" width="120%" height="132%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.055" numOctaves="3" seed="19" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="${roughScale}" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
-        <feGaussianBlur in="displaced" stdDeviation="${edgeBlur}" result="soft"/>
-        <feColorMatrix in="soft" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${0.78 + depth * 0.18} 0" result="mist"/>
-        <feMerge>
-          <feMergeNode in="mist"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-      <filter id="edgeBloom" x="-14%" y="-20%" width="128%" height="140%">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="${2 + depth * 1.8}" result="rimBlur"/>
-        <feDropShadow dx="${1 + dispersion * 3}" dy="${1 + dispersion * 2}" stdDeviation="${3 + dispersion * 3}" flood-color="#ffffff" flood-opacity="${0.1 + dispersion * 0.18}"/>
-        <feDropShadow dx="${-1 - dispersion * 3}" dy="${-1 - dispersion * 2}" stdDeviation="${3 + dispersion * 3}" flood-color="#ffffff" flood-opacity="${0.08 + dispersion * 0.14}"/>
-      </filter>
-      <filter id="innerRefraction" x="-6%" y="-10%" width="112%" height="120%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.022" numOctaves="2" seed="31" result="softNoise"/>
-        <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="${3 + depth * 4}" xChannelSelector="R" yChannelSelector="B"/>
-      </filter>
-      <filter id="softLogoShadow" x="-25%" y="-25%" width="150%" height="150%">
-        <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity=".32"/>
-      </filter>
       <linearGradient id="shade" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stop-color="#000" stop-opacity=".18"/>
         <stop offset=".5" stop-color="#000" stop-opacity=".04"/>
         <stop offset="1" stop-color="#000" stop-opacity=".28"/>
       </linearGradient>
+      <g id="cardShape"><rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" ry="${card.radius}"/></g>
+      <g id="logoShape"><rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="44" ry="44"/></g>
+      <g id="dispersionMetrics" data-shift="${microShift}" data-opacity="${microOpacity}"></g>
     </defs>`;
 }
 
 function renderCard(card, logoBox) {
   const depth = state.glassDepth / 100;
-  const dispersion = state.glassDispersion / 100;
+  const dispersionShift = state.glassDispersion === 0 ? 0 : Math.min(1, state.glassDispersion / 100);
+  const dispersionOpacity = state.glassDispersion === 0 ? 0 : Math.min(0.12, 0.018 + state.glassDispersion / 1000);
   const logoSrc = state.logo || buildDefaultLogo();
+  const bgSrc = state.background || buildDefaultBackground();
   const contentX = logoBox.x + logoBox.width + 78;
   const subtitleY = card.y + 128;
   const titleY = subtitleY + state.subtitleTitleGap;
@@ -330,28 +359,43 @@ function renderCard(card, logoBox) {
   const descY = lineY + state.ruleDescGap;
   const descLines = formatDescriptionLines(state.description, state.descriptionBoxWidth, state.descriptionBoxHeight);
   const logoImage = imageLayer(logoSrc, "logoClip", logoBox, state.logoScale, state.logoX, state.logoY, "xMidYMid slice");
+  const lineEnd = Math.min(card.x + card.width - 126, descX + state.descriptionBoxWidth);
+  const cardBorderWidth = 2.5;
+  const logoBorderWidth = 2;
 
   return `
-    <g filter="url(#liquidShadow)">
-      <rect x="${card.x - 10}" y="${card.y - 10}" width="${card.width + 20}" height="${card.height + 20}" rx="${card.radius + 10}" fill="none" stroke="#ffffff" stroke-opacity="${0.1 + depth * 0.08}" stroke-width="22" filter="url(#roughGlassEdge)"/>
-      <rect x="${card.x + 8}" y="${card.y + 8}" width="${card.width - 16}" height="${card.height - 16}" rx="${card.radius - 8}" fill="none" stroke="#ffffff" stroke-opacity="${0.1 + dispersion * 0.12}" stroke-width="${10 + dispersion * 8}" filter="url(#roughGlassEdge)"/>
-      ${imageLayer(state.background || buildDefaultBackground(), "cardClip", { x: card.x, y: card.y, width: card.width, height: card.height }, state.backgroundScale + 10, state.backgroundX, state.backgroundY, "xMidYMid slice", 0.18 + depth * 0.18)}
-      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#glassFill)"/>
-      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#glassSurface)" filter="url(#innerRefraction)"/>
-      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#glassGlowA)"/>
-      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" fill="url(#glassGlowB)"/>
-      <rect x="${card.x + 2}" y="${card.y + 2}" width="${card.width - 4}" height="${card.height - 4}" rx="${card.radius - 2}" fill="none" stroke="url(#glassBorder)" stroke-width="${14 + depth * 10}" stroke-opacity="${0.6 + depth * 0.22}" filter="url(#edgeBloom)"/>
-      <rect x="${card.x + 18}" y="${card.y + 18}" width="${card.width - 36}" height="${card.height - 36}" rx="${card.radius - 18}" fill="none" stroke="url(#edgeRim)" stroke-opacity="${0.28 + depth * 0.18}" stroke-width="${26 + depth * 16}" filter="url(#roughGlassEdge)"/>
-      <path d="M${card.x + 74} ${card.y + 52} C${card.x + 250} ${card.y + 12}, ${card.x + 515} ${card.y + 12}, ${card.x + 760} ${card.y + 46}" fill="none" stroke="#ffffff" stroke-opacity="${0.22 + depth * 0.16}" stroke-width="18" stroke-linecap="round" filter="url(#roughGlassEdge)"/>
+    <g aria-label="card shadows">
+      <use href="#cardShape" filter="url(#ambientShadow)"/>
+      <use href="#cardShape" filter="url(#contactShadow)"/>
     </g>
-    <g filter="url(#softLogoShadow)">
-      <rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="44" fill="rgba(255,255,255,.16)" stroke="#ffffff" stroke-opacity=".5" stroke-width="2.4"/>
+
+    <g aria-label="system frosted glass card">
+      ${backgroundCanvasLayer(bgSrc, "cardClip", state.backgroundScale, state.backgroundX, state.backgroundY, { filter: "url(#frostedBlur)", expand: 1.04 })}
+      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" ry="${card.radius}" fill="url(#glassTint)" clip-path="url(#cardClip)"/>
+      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" ry="${card.radius}" fill="url(#surfaceHighlight)" clip-path="url(#cardClip)"/>
+      <rect x="${card.x}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" ry="${card.radius}" fill="url(#coolReflection)" clip-path="url(#cardClip)"/>
+      ${dispersionShift ? `<rect x="${card.x - dispersionShift}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" ry="${card.radius}" fill="none" stroke="#6fb8ff" stroke-opacity="${dispersionOpacity}" stroke-width="1"/>` : ""}
+      ${dispersionShift ? `<rect x="${card.x + dispersionShift}" y="${card.y}" width="${card.width}" height="${card.height}" rx="${card.radius}" ry="${card.radius}" fill="none" stroke="#ff6f86" stroke-opacity="${dispersionOpacity}" stroke-width="1"/>` : ""}
+      <rect x="${card.x + cardBorderWidth / 2}" y="${card.y + cardBorderWidth / 2}" width="${card.width - cardBorderWidth}" height="${card.height - cardBorderWidth}" rx="${card.radius - cardBorderWidth / 2}" ry="${card.radius - cardBorderWidth / 2}" fill="none" stroke="url(#cleanGlassBorder)" stroke-width="${cardBorderWidth}"/>
+      <path d="M${card.x + card.radius} ${card.y + 1.5} H${card.x + card.width - card.radius} Q${card.x + card.width - 1.5} ${card.y + 1.5} ${card.x + card.width - 1.5} ${card.y + card.radius}" fill="none" stroke="#ffffff" stroke-opacity="${0.18 + depth * 0.1}" stroke-width="1" stroke-linecap="round"/>
+      <path d="M${card.x + 1.5} ${card.y + card.height - card.radius} Q${card.x + 1.5} ${card.y + card.height - 1.5} ${card.x + card.radius} ${card.y + card.height - 1.5} H${card.x + card.width - card.radius}" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="1" stroke-linecap="round"/>
+    </g>
+
+    <g aria-label="logo glass shadows">
+      <use href="#logoShape" filter="url(#logoShadow)"/>
+    </g>
+    <g aria-label="logo frosted glass container">
+      ${backgroundCanvasLayer(bgSrc, "logoClip", state.backgroundScale, state.backgroundX, state.backgroundY, { filter: "url(#frostedBlur)", expand: 1.04 })}
+      <rect x="${logoBox.x}" y="${logoBox.y}" width="${logoBox.width}" height="${logoBox.height}" rx="44" ry="44" fill="url(#logoGlassTint)" clip-path="url(#logoClip)"/>
+      <rect x="${logoBox.x + logoBorderWidth / 2}" y="${logoBox.y + logoBorderWidth / 2}" width="${logoBox.width - logoBorderWidth}" height="${logoBox.height - logoBorderWidth}" rx="${44 - logoBorderWidth / 2}" ry="${44 - logoBorderWidth / 2}" fill="none" stroke="url(#cleanGlassBorder)" stroke-width="${logoBorderWidth}"/>
+      <path d="M${logoBox.x + 44} ${logoBox.y + 1.5} H${logoBox.x + logoBox.width - 44} Q${logoBox.x + logoBox.width - 1.5} ${logoBox.y + 1.5} ${logoBox.x + logoBox.width - 1.5} ${logoBox.y + 44}" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1" stroke-linecap="round"/>
       ${logoImage}
     </g>
+
     <g class="font-main textFill">
       <text x="${contentX}" y="${subtitleY}" class="subtitle" font-size="42" opacity=".88">${escapeXml(state.subTitle)}</text>
       <text x="${contentX}" y="${titleY}" class="title" font-size="84">${escapeXml(state.mainTitle)}</text>
-      <line x1="${contentX}" y1="${lineY}" x2="${Math.min(card.x + card.width - 126, descX + state.descriptionBoxWidth)}" y2="${lineY}" stroke="#ffffff" stroke-opacity="${0.25 + depth * 0.18}" stroke-width="2"/>
+      <line x1="${contentX}" y1="${lineY}" x2="${lineEnd}" y2="${lineY}" stroke="#ffffff" stroke-opacity="${0.18 + depth * 0.14}" stroke-width="1.5"/>
       <text x="${descX}" y="${descY}" class="desc mutedFill" font-size="44">
         ${descLines.map((line, i) => `<tspan x="${descX}" dy="${i === 0 ? 0 : state.descLineGap}">${escapeXml(line)}</tspan>`).join("")}
       </text>
@@ -362,7 +406,7 @@ function renderSvg() {
   const w = state.width;
   const h = state.height;
   const bgSrc = state.background || buildDefaultBackground();
-  const card = { x: 188, y: 236, width: 1556, height: 690, radius: 126 };
+  const card = { x: 188, y: 236, width: 1556, height: 690, radius: 116 };
   const logoBox = { x: card.x + 118, y: card.y + 172, width: 340, height: 340 };
   const bgArea = { x: 0, y: 0, width: w, height: h };
 
