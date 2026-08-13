@@ -138,11 +138,32 @@
             <button class="button secondary full-width" id="smartFit" type="button">智能适配底图</button>
             <p class="smart-summary" id="smartSummary" role="status"></p>
             <div id="glassRangeControls"></div>
+            <div class="text-color-panel" aria-label="文字颜色系统">
+              <div class="preset-head"><span>文字颜色</span><button class="button small secondary" id="recalculateTextColors" type="button">重新计算颜色</button></div>
+              <div class="text-color-card" data-text-role="title">
+                <div class="text-color-head"><strong>主标题</strong><select id="titleColorMode"><option value="auto">自动</option><option value="manual">手动</option><option value="followBody">跟随正文</option></select></div>
+                <div class="color-row"><input type="color" id="titleColorPicker" value="#655A61" aria-label="主标题颜色" /><input type="text" id="titleColorHex" value="#655A61" spellcheck="false" aria-label="主标题十六进制颜色" /></div>
+                <div class="opacity-row"><label>透明度<input type="range" id="titleOpacity" min="40" max="100" step="1" value="94" /></label><input type="number" id="titleOpacityNumber" min="40" max="100" step="1" value="94" /><span>%</span></div>
+                <p class="color-meta" id="titleColorMeta">rgba(101, 90, 97, 0.94)</p><p class="field-message" id="titleColorError" role="alert"></p>
+              </div>
+              <div class="text-color-card" data-text-role="subtitle">
+                <div class="text-color-head"><strong>副标题</strong><select id="subtitleColorMode"><option value="auto">自动</option><option value="manual">手动</option><option value="followAccent">跟随强调色</option></select></div>
+                <div class="color-row"><input type="color" id="subtitleColorPicker" value="#D989A8" aria-label="副标题颜色" /><input type="text" id="subtitleColorHex" value="#D989A8" spellcheck="false" aria-label="副标题十六进制颜色" /></div>
+                <div class="opacity-row"><label>透明度<input type="range" id="subtitleOpacity" min="30" max="100" step="1" value="88" /></label><input type="number" id="subtitleOpacityNumber" min="30" max="100" step="1" value="88" /><span>%</span></div>
+                <p class="color-meta" id="subtitleColorMeta">rgba(217, 137, 168, 0.88)</p><p class="field-message" id="subtitleColorError" role="alert"></p>
+              </div>
+              <div class="text-color-card" data-text-role="body">
+                <div class="text-color-head"><strong>正文</strong><select id="bodyTextColorMode"><option value="auto">自动</option><option value="manual">手动</option><option value="followTitle">跟随主标题</option></select></div>
+                <div class="color-row"><input type="color" id="bodyTextColorPicker" value="#746A70" aria-label="正文颜色" /><input type="text" id="bodyTextColorHex" value="#746A70" spellcheck="false" aria-label="正文十六进制颜色" /></div>
+                <div class="opacity-row"><label>透明度<input type="range" id="bodyTextOpacity" min="40" max="100" step="1" value="80" /></label><input type="number" id="bodyTextOpacityNumber" min="40" max="100" step="1" value="80" /><span>%</span></div>
+                <p class="color-meta" id="bodyTextColorMeta">rgba(116, 106, 112, 0.80)</p><p class="field-message" id="bodyTextColorError" role="alert"></p>
+              </div>
+              <button class="button secondary full-width" id="fullSmartFit" type="button">完全重新智能适配</button>
+            </div>
             <div class="two-col">
               <label>强调色<input type="color" id="accentColor" value="#F5F7FF" /></label>
-              <label>文字色<input type="color" id="textColor" value="#FFFFFF" /></label>
+              <label>玻璃 tint<input type="color" id="glassTintColor" value="#FFFFFF" /></label>
             </div>
-            <label>玻璃 tint<input type="color" id="glassTintColor" value="#FFFFFF" /></label>
             <div class="theme-block">
               <div class="mini-heading">推荐配色</div>
               <div class="theme-palette" id="themePalette"></div>
