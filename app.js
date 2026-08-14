@@ -66,7 +66,7 @@ const AUTO_LAYOUT = {
 const DEFAULTS = {
   width: CANVAS.width, height: CANVAS.height,
   layoutStateVersion: LAYOUT_STATE_VERSION,
-  mainTitle: "雕像也无法让她回心转意", subTitle: "成就解锁", description: "它们毫无意义",
+  mainTitle: "雕像也无法让她回心转意", subTitle: "碎片解锁", description: "它们毫无意义",
   colorStateVersion: 2,
   accentColor: "#D989A8", textColor: "#655A61", primaryAccent: "#D989A8", secondaryAccent: "",
   titleColorMode: "auto", titleColor: "#655A61", titleOpacity: 94, titleOpacityManuallyEdited: false, titleColorSource: "自动：深灰紫标题", titleContrast: 3.7,
