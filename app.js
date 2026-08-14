@@ -87,7 +87,7 @@ const DEFAULTS = {
   subtitleTitleVisualGap: 24, titleDividerVisualGap: 48, dividerDescriptionVisualGap: 44, descriptionLineBaselineGap: 54,
   textOpticalOffsetY: 8,
   subtitleLetterSpacing: 4, titleLetterSpacing: -.5, descLetterSpacing: 0,
-  dividerWidth: 260, descriptionBoxWidth: 860, descriptionBoxHeight: 240, zoom: 72
+  dividerWidth: 260, descriptionBoxWidth: 900, descriptionBoxHeight: 240, zoom: 72
 };
 const RANGE_GROUPS = {
   background: ["backgroundScale", "backgroundX", "backgroundY", "backgroundOpacity"],
