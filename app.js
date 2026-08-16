@@ -93,7 +93,7 @@ const RANGE_GROUPS = {
   background: ["backgroundScale", "backgroundX", "backgroundY", "backgroundOpacity"],
   logo: ["logoScale", "logoX", "logoY", "logoOpticalOffsetY", "logoContainerSize"],
   glass: ["glassDepth", "cardOpacity", "glassDispersion", "glassSaturation", "glassContrast", "glassTintOpacity"],
-  type: ["textOpticalOffsetY", "subtitleTitleVisualGap", "titleDividerVisualGap", "dividerDescriptionVisualGap", "descriptionLineBaselineGap", "subtitleLetterSpacing", "titleLetterSpacing", "descLetterSpacing", "dividerWidth", "dividerOpacity", "descriptionBoxWidth", "descCharsPerLine", "cardHeight", "cardX", "cardY", "cardScale", "zoom"]
+  type: ["titleLetterSpacing", "descLetterSpacing", "descCharsPerLine"]
 };
 const RANGE_LABELS = {
   backgroundScale: "底图缩放", backgroundX: "水平位置", backgroundY: "垂直位置", backgroundOpacity: "底图不透明度",
@@ -350,7 +350,8 @@ function balanceLines(lines, maxWidth, size, weight, spacing, family) {
   return out;
 }
 function descriptionLines(maxLines, maxWidth, size, weight, spacing, family) {
-  const charsPerLine = Number(state.descCharsPerLine) || 20;
+  const charsPerLine = Math.min(24, Math.max(10, Number(state.descCharsPerLine) || 20));
+  const maxLinesLimit = 2;
   const lines = [];
   for (const manual of String(state.description || "").split(/\r?\n/)) {
     if (manual.length <= charsPerLine) {
@@ -364,8 +365,9 @@ function descriptionLines(maxLines, maxWidth, size, weight, spacing, family) {
         lines.push(...wrapMeasuredLine(chunk, maxWidth, size, weight, spacing, family));
       }
     }
+    if (lines.length >= maxLinesLimit) break;
   }
-  const overflow = lines.length > maxLines; const shown = lines.slice(0, maxLines);
+  const overflow = lines.length > maxLinesLimit; const shown = lines.slice(0, maxLinesLimit);
   if (overflow && shown.length) { let last = shown.at(-1); while (last.length && measureText(`${last}…`, size, weight, spacing, family) > maxWidth) last = graphemes(last).slice(0, -1).join(""); shown[shown.length - 1] = `${last}…`; }
   return { lines: shown, overflow };
 }
@@ -492,9 +494,13 @@ function layoutSystemTypography({ card, logoBox, subtitle, title, descriptionLin
   const targetCenterY = card.y + card.height / 2 + visibleGaps.textOpticalOffsetY;
   const textBlockTop = targetCenterY - textBlockHeight / 2;
 
+  // 两行正文时略微上调整体文字位置
+  const descLineCount = hasDescription ? descLines.length : 0;
+  const twoLineOffset = descLineCount === 2 ? -12 : 0;
+
   // Walk baselines out from the measured top.
   const positions = {};
-  let cursor = textBlockTop;
+  let cursor = textBlockTop + twoLineOffset;
   prevRole = null;
   segments.forEach(seg => {
     cursor += gapBefore(seg.role, prevRole);
@@ -540,7 +546,7 @@ function systemTextPlan(card, logoBox, typography) {
   const descWidth = Math.min(state.descriptionBoxWidth, columnWidth);
   const lineCountEstimate = estimateDescriptionLineCount(descWidth, descToken.fontSize, descToken.fontWeight, descToken.letterSpacing, descFamily);
   const showDivider = shouldShowDivider(lineCountEstimate);
-  const maxLines = String(state.description || "").trim() ? Math.max(1, Math.min(3, lineCountEstimate)) : 0;
+  const maxLines = String(state.description || "").trim() ? Math.min(2, lineCountEstimate) : 0;
   const desc = maxLines ? descriptionLines(maxLines, descWidth, descToken.fontSize, descToken.fontWeight, descToken.letterSpacing, descFamily) : { lines: [], overflow: false };
   const layout = layoutSystemTypography({
     card, logoBox,
