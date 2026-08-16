@@ -274,7 +274,7 @@ function currentTypography() {
   const src = TYPOGRAPHY_PRESETS[layout];
   const rec = MATERIAL_PRESETS[currentMaterialBase()]?.typographyRecommendation || {};
   const clone = JSON.parse(JSON.stringify(src));
-  const density = layout === "system" && state.layoutDensityMode === "auto" ? fixedSystemLayout() : null;
+  const density = layout === "system" && state.layoutDensityMode === "auto" ? computeSystemAutoLayout() : null;
   clone.subtitle.letterSpacing = state.subtitleLetterSpacing;
   clone.subtitle.opacity = colorOpacity("subtitle");
   clone.title.letterSpacing = state.titleLetterSpacing;
@@ -727,22 +727,23 @@ function renderCertificateCard(card, logoBox, material, typography) {
   return `${renderGlass(card, logoBox, material, bg)}${renderLogoLayer(logoBox, material, bg)}<g aria-label="certificate typography" text-anchor="middle" style="--subtitle-size:${subtitle.fontSize}px;--subtitle-weight:${subtitle.fontWeight};--subtitle-spacing:${subtitle.letterSpacing}px;--title-weight:${titleToken.fontWeight};--title-spacing:${Math.max(1, titleToken.letterSpacing)}px;--desc-size:${descToken.fontSize}px;--desc-weight:${descToken.fontWeight};--desc-spacing:${descToken.letterSpacing}px"><text x="${centerX}" y="${subtitleY}" class="subtitle-text" fill="${roleColor(subtitle)}" opacity="${colorOpacity("subtitle")}">${escapeXml(state.subTitle)}</text><text x="${centerX}" y="${firstTitleBaseline}" class="title-text" font-size="${title.size}" fill="${roleColor(titleToken)}" opacity="${colorOpacity("title")}" filter="url(#titleShadow)">${title.lines.map((line,i) => `<tspan x="${centerX}" dy="${i ? titleLineGap : 0}">${escapeXml(line)}</tspan>`).join("")}</text><rect x="${centerX - Math.min(state.dividerWidth, 360) / 2}" y="${lineY - .5}" width="${Math.min(state.dividerWidth, 360)}" height="1" fill="url(#certificateRule)"/><rect x="${centerX - dot / 2}" y="${lineY - dot / 2}" width="${dot}" height="${dot}" transform="rotate(45 ${centerX} ${lineY})" fill="${state.accentColor}" opacity=".28"/><text x="${centerX}" y="${descTopY + descMetrics.ascent}" class="description-text" fill="${roleColor(descToken)}" opacity="${colorOpacity("body")}" filter="url(#descriptionShadow)">${desc.lines.map((line,i) => `<tspan x="${centerX}" dy="${i ? state.descriptionLineBaselineGap : 0}">${escapeXml(line)}</tspan>`).join("")}</text></g>`;
 }
 function estimateDescriptionLineCount(width = state.descriptionBoxWidth, size = 32, weight = 400, spacing = state.descLetterSpacing, family = fontStackForRole("description")) { const text = String(state.description || "").trim(); if (!text) return 0; const lines=[]; for (const manual of text.split(/\r?\n/)) lines.push(...wrapMeasuredLine(manual, width, size, weight, spacing, family)); return Math.max(1, Math.min(3, lines.length)); }
-function fixedSystemLayout() { return { height: 570, radius: 84, subtitleTitleVisualGap: 24, titleDividerVisualGap: 48, dividerDescriptionVisualGap: 44, descriptionLineBaselineGap: 54, descFontSize: 34, descOpacity: .80, dividerWidth: 260, logoOffset: 0, textOffset: 8, logoTarget: 246, logoContainerSize: 312, lineCount: 0 }; }
 function computeSystemAutoLayout() { const lineCount = estimateDescriptionLineCount(860, 32, 400, state.descLetterSpacing, fontStackForRole("description")); const base = AUTO_LAYOUT.system[Math.max(0, Math.min(3, lineCount))] || AUTO_LAYOUT.system[3]; return { ...base, lineCount }; }
 function shouldShowDivider(lineCount) { if (state.dividerMode === "show") return true; if (state.dividerMode === "hide") return false; return lineCount > 0; }
 function layoutGeometry() {
   if (state.layoutPreset === "certificate") { const base = { x: 226, y: 245, width: 1480, height: 870, radius: 84 }; const scale = clamp(state.cardScale || 100, 86, 108) / 100; const card = { width: base.width * scale, height: base.height * scale, radius: base.radius * scale }; card.x = base.x + (base.width - card.width) / 2 + (state.cardPositionMode === "custom" ? state.cardX : 0); card.y = base.y + (base.height - card.height) / 2 + (state.cardPositionMode === "custom" ? state.cardY : 0); const size = 210 * scale; const logoBox = { x: card.x + (card.width - size) / 2, y: card.y + 92 * scale + state.logoOpticalOffsetY, width: size, height: size }; return { card, logoBox }; }
+  const auto = computeSystemAutoLayout();
   const baseWidth = 1556, scale = clamp(state.cardScale || 100, 86, 108) / 100;
-  const height = 570 * scale;
+  const height = (state.cardHeightMode === "fixed" ? state.cardHeight : auto.height) * scale;
   const width = baseWidth * scale;
   const card = {
     x: (state.width - width) / 2 + (state.cardPositionMode === "custom" ? state.cardX : 0),
     y: (state.height - height) / 2 + (state.cardPositionMode === "custom" ? state.cardY : 0),
     width, height,
-    radius: 92 * scale
+    radius: (state.cardHeightMode === "fixed" ? 92 : auto.radius) * scale
   };
+  // Logo column: fixed 320px column, content area independently centred on the card.
   const columnWidth = 320 * scale;
-  const boxSize = 312 * scale;
+  const boxSize = (state.logoStyle === "glass" ? clamp(Number(state.logoContainerSize) || auto.logoContainerSize, 220, 460) : auto.logoTarget) * scale;
   const logoBox = { x: card.x + 118 * scale + (columnWidth - boxSize) / 2, width: boxSize, height: boxSize };
   logoBox.y = card.y + (card.height - boxSize) / 2 + (Number(state.logoOpticalOffsetY) || 0);
   logoBox.columnX = card.x + 118 * scale;
@@ -1041,17 +1042,18 @@ function deriveSubtitleColor(logoAnalysis,region,material){const warm=logoAnalys
 function computeAutoTextColorPlan(finalAnalysis,logoAnalysis) { const candidates=generateTextColorCandidates(logoAnalysis),pastelMaterial=normalizeHex(state.glassTintColor)==="#2B2932"&&Math.abs(state.glassSaturation-.70)<.08; let title=bestRoleCandidate(candidates,finalAnalysis.title,"title",logoAnalysis),body=bestRoleCandidate({light:["#E7E0E3","#ECE5E8",...candidates.light],dark:candidates.dark},finalAnalysis.body||finalAnalysis.title,"body",logoAnalysis),subtitle=deriveSubtitleColor(logoAnalysis,finalAnalysis.subtitle||finalAnalysis.title,currentMaterialToken()); if(pastelMaterial){const titleHex="#F3EEF0",bodyHex="#E7E0E3",subtitleHex="#F2A0B5";title={...title,hex:titleHex,opacity:94,family:"light",contrast:contrastMetrics(titleHex,94,finalAnalysis.title)};body={...body,hex:bodyHex,opacity:84,family:"light",contrast:contrastMetrics(bodyHex,84,finalAnalysis.body||finalAnalysis.title)};subtitle={...subtitle,hex:subtitleHex,opacity:94,contrast:contrastMetrics(subtitleHex,94,finalAnalysis.subtitle||finalAnalysis.title),source:"Logo 粉色暖强调"};}return {summaryFamily:title.family,title:{color:title.hex,opacity:title.opacity,contrast:title.contrast,source:title.family==="light"?"最终玻璃上的柔和冷粉白":"最终玻璃上的深色标题",shadow:title.family==="light"?.08:.02},body:{color:body.hex,opacity:body.opacity,contrast:body.contrast,source:body.family==="light"?"最终玻璃上的中性浅灰粉白":"最终玻璃上的深色正文",shadow:body.family==="light"?.08:.02},subtitle:{color:subtitle.hex,opacity:subtitle.opacity,contrast:subtitle.contrast,source:subtitle.source}}; }
 async function applySmartTextColors({resetOpacity=false,finalAnalysis=null,logoAnalysis=null}={}) { const analysis=finalAnalysis||await renderSmartAnalysisCanvas(), logo=logoAnalysis||await analyzeLogoColors(currentMaterialBase(),analysis.subtitle||analysis.title),plan=computeAutoTextColorPlan(analysis,logo); if(state.titleColorMode!=="manual"){state.titleColor=plan.title.color;state.titleColorMode="auto";state.titleColorSource=plan.title.source;}if(state.bodyTextColorMode!=="manual"){state.bodyTextColor=plan.body.color;state.bodyTextColorMode="auto";state.bodyTextColorSource=plan.body.source;}if(state.subtitleColorMode!=="manual"){state.subtitleColor=plan.subtitle.color;state.subtitleColorMode="auto";state.subtitleColorSource=plan.subtitle.source;}if(resetOpacity||!state.titleOpacityManuallyEdited)state.titleOpacity=plan.title.opacity;if(resetOpacity||!state.bodyTextOpacityManuallyEdited)state.bodyTextOpacity=plan.body.opacity;if(resetOpacity||!state.subtitleOpacityManuallyEdited)state.subtitleOpacity=plan.subtitle.opacity;state.titleContrast=plan.title.contrast.score;state.bodyTextContrast=plan.body.contrast.score;state.subtitleContrast=plan.subtitle.contrast.score;state.titleShadowOpacity=plan.title.shadow;state.descShadowOpacity=plan.body.shadow;syncLegacyTextColor();return{plan,analysis,logoAnalysis:logo}; }
 function applySmartLayoutForContent() {
-  state.cardHeightMode = "fixed"; state.layoutDensityMode = "auto";
+  state.cardHeightMode = "auto"; state.layoutDensityMode = "auto";
   state.dividerMode = state.dividerMode || "auto";
-  state.cardHeight = 570;
-  state.subtitleTitleVisualGap = 24;
-  state.titleDividerVisualGap = 48;
-  state.dividerDescriptionVisualGap = 44;
-  state.descriptionLineBaselineGap = 54;
-  state.dividerWidth = 260;
-  state.textOpticalOffsetY = 0;
-  state.logoOpticalOffsetY = 0;
-  state.logoContainerSize = 312;
+  const metrics = computeSystemAutoLayout();
+  state.cardHeight = metrics.height;
+  state.subtitleTitleVisualGap = metrics.subtitleTitleVisualGap;
+  state.titleDividerVisualGap = metrics.titleDividerVisualGap;
+  state.dividerDescriptionVisualGap = metrics.dividerDescriptionVisualGap;
+  state.descriptionLineBaselineGap = metrics.descriptionLineBaselineGap;
+  state.dividerWidth = metrics.dividerWidth;
+  state.textOpticalOffsetY = metrics.textOffset;
+  state.logoOpticalOffsetY = metrics.logoOffset;
+  state.logoContainerSize = metrics.logoContainerSize;
   state.cardX = 0; state.cardY = 0; state.cardPositionMode = "auto";
 }
 /* Human-readable accent name derived from the measured hue, never from a filename. */
