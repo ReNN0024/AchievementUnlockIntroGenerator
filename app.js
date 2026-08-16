@@ -87,13 +87,13 @@ const DEFAULTS = {
   subtitleTitleVisualGap: 24, titleDividerVisualGap: 48, dividerDescriptionVisualGap: 44, descriptionLineBaselineGap: 54,
   textOpticalOffsetY: 8,
   subtitleLetterSpacing: 4, titleLetterSpacing: -.5, descLetterSpacing: 0,
-  dividerWidth: 260, descriptionBoxWidth: 900, descriptionBoxHeight: 240, zoom: 72
+  dividerWidth: 260, descriptionBoxWidth: 900, descriptionBoxHeight: 240, descCharsPerLine: 20, zoom: 72
 };
 const RANGE_GROUPS = {
   background: ["backgroundScale", "backgroundX", "backgroundY", "backgroundOpacity"],
   logo: ["logoScale", "logoX", "logoY", "logoOpticalOffsetY", "logoContainerSize"],
   glass: ["glassDepth", "cardOpacity", "glassDispersion", "glassSaturation", "glassContrast", "glassTintOpacity"],
-  type: ["textOpticalOffsetY", "subtitleTitleVisualGap", "titleDividerVisualGap", "dividerDescriptionVisualGap", "descriptionLineBaselineGap", "subtitleLetterSpacing", "titleLetterSpacing", "descLetterSpacing", "dividerWidth", "dividerOpacity", "descriptionBoxWidth", "cardHeight", "cardX", "cardY", "cardScale", "zoom"]
+  type: ["textOpticalOffsetY", "subtitleTitleVisualGap", "titleDividerVisualGap", "dividerDescriptionVisualGap", "descriptionLineBaselineGap", "subtitleLetterSpacing", "titleLetterSpacing", "descLetterSpacing", "dividerWidth", "dividerOpacity", "descriptionBoxWidth", "descCharsPerLine", "cardHeight", "cardX", "cardY", "cardScale", "zoom"]
 };
 const RANGE_LABELS = {
   backgroundScale: "底图缩放", backgroundX: "水平位置", backgroundY: "垂直位置", backgroundOpacity: "底图不透明度",
@@ -102,7 +102,7 @@ const RANGE_LABELS = {
   textOpticalOffsetY: "文字整体垂直位置",
   subtitleTitleVisualGap: "副标题到主标题（可见距离）", titleDividerVisualGap: "主标题到分割线（可见距离）", dividerDescriptionVisualGap: "分割线到正文（可见距离）", descriptionLineBaselineGap: "正文行距（基线）",
   subtitleLetterSpacing: "副标题字距", titleLetterSpacing: "主标题字距", descLetterSpacing: "正文字距", dividerWidth: "分割线宽度", dividerOpacity: "分割线透明度",
-  descriptionBoxWidth: "文案框宽度", descriptionBoxHeight: "文案框高度", cardHeight: "固定卡片高度", cardX: "卡片水平位置", cardY: "卡片垂直位置", cardScale: "卡片缩放", zoom: "预览缩放"
+  descriptionBoxWidth: "文案框宽度", descriptionBoxHeight: "文案框高度", descCharsPerLine: "介绍文案每行字数", cardHeight: "固定卡片高度", cardX: "卡片水平位置", cardY: "卡片垂直位置", cardScale: "卡片缩放", zoom: "预览缩放"
 };
 const RANGE_CONFIG = {
   backgroundScale: [100, 240, 1], backgroundX: [-100, 100, 1], backgroundY: [-100, 100, 1], backgroundOpacity: [0, 100, 1],
@@ -111,7 +111,7 @@ const RANGE_CONFIG = {
   textOpticalOffsetY: [-80, 80, 1],
   subtitleTitleVisualGap: [0, 120, 1], titleDividerVisualGap: [0, 160, 1], dividerDescriptionVisualGap: [0, 140, 1], descriptionLineBaselineGap: [40, 112, 1],
   subtitleLetterSpacing: [0, 10, .5], titleLetterSpacing: [-2, 8, .25], descLetterSpacing: [-.5, 4, .25], dividerWidth: [120, 600, 1], dividerOpacity: [0, 100, 1],
-  descriptionBoxWidth: [520, 1060, 1], descriptionBoxHeight: [90, 300, 1], cardHeight: [480, 760, 1], cardX: [-160, 160, 1], cardY: [-120, 120, 1], cardScale: [86, 108, 1], zoom: [42, 100, 1]
+  descriptionBoxWidth: [520, 1060, 1], descriptionBoxHeight: [90, 300, 1], descCharsPerLine: [10, 40, 1], cardHeight: [480, 760, 1], cardX: [-160, 160, 1], cardY: [-120, 120, 1], cardScale: [86, 108, 1], zoom: [42, 100, 1]
 };
 const RANGE_INPUT_MAX = { logoScale: 600 };
 const state = { ...DEFAULTS, background: "", logo: "", customFontName: "", customFontData: "", customFontFormat: "", customFontFileName: "", themes: [], selectedTheme: -1, editorTarget: null };
@@ -350,8 +350,21 @@ function balanceLines(lines, maxWidth, size, weight, spacing, family) {
   return out;
 }
 function descriptionLines(maxLines, maxWidth, size, weight, spacing, family) {
+  const charsPerLine = Number(state.descCharsPerLine) || 20;
   const lines = [];
-  for (const manual of String(state.description || "").split(/\r?\n/)) lines.push(...wrapMeasuredLine(manual, maxWidth, size, weight, spacing, family));
+  for (const manual of String(state.description || "").split(/\r?\n/)) {
+    if (manual.length <= charsPerLine) {
+      lines.push(...wrapMeasuredLine(manual, maxWidth, size, weight, spacing, family));
+    } else {
+      const chunks = [];
+      for (let i = 0; i < manual.length; i += charsPerLine) {
+        chunks.push(manual.slice(i, i + charsPerLine));
+      }
+      for (const chunk of chunks) {
+        lines.push(...wrapMeasuredLine(chunk, maxWidth, size, weight, spacing, family));
+      }
+    }
+  }
   const overflow = lines.length > maxLines; const shown = lines.slice(0, maxLines);
   if (overflow && shown.length) { let last = shown.at(-1); while (last.length && measureText(`${last}…`, size, weight, spacing, family) > maxWidth) last = graphemes(last).slice(0, -1).join(""); shown[shown.length - 1] = `${last}…`; }
   return { lines: shown, overflow };
