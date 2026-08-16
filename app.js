@@ -75,7 +75,7 @@ const DEFAULTS = {
   dividerOpacity: 100,
   fontFamily: "system", titleFontFamily: "system", bodyFontFamily: "system", customFontScope: "title", showSubtitleMarker: true, typographyManuallyEdited: false,
   backgroundScale: 100, backgroundX: 0, backgroundY: 0, backgroundOpacity: 100,
-  logoScale: 160, logoX: -7, logoY: 0, logoStyle: "floating", logoOpticalOffsetY: 0,
+  logoScale: 160, logoX: -8, logoY: 0, logoStyle: "floating", logoOpticalOffsetY: 0,
   logoCropMode: "auto", logoCropBounds: null, logoContainerSize: 312,
   glassPreset: "standard", materialBase: "standard", glassDepth: 58, cardOpacity: 22, glassDispersion: 0,
   glassSaturation: 1.07, glassContrast: 1.03, glassTintColor: "#FFFFFF", glassTintOpacity: .12,
