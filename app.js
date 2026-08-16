@@ -194,7 +194,7 @@ function normalizeState() {
   syncLegacyTextColor();
   if (!Number.isFinite(Number(state.titleShadowOpacity))) state.titleShadowOpacity = DEFAULTS.titleShadowOpacity;
   if (!Number.isFinite(Number(state.descShadowOpacity))) state.descShadowOpacity = DEFAULTS.descShadowOpacity;
-  if (!state.cardHeightMode) state.cardHeightMode = "auto";
+  if (!state.cardHeightMode) state.cardHeightMode = "fixed";
   if (!state.dividerMode) state.dividerMode = "auto";
   if (!state.cardPositionMode) state.cardPositionMode = "auto";
   if (!state.layoutDensityMode) state.layoutDensityMode = "auto";
@@ -739,13 +739,13 @@ function layoutGeometry() {
   if (state.layoutPreset === "certificate") { const base = { x: 226, y: 245, width: 1480, height: 870, radius: 84 }; const scale = clamp(state.cardScale || 100, 86, 108) / 100; const card = { width: base.width * scale, height: base.height * scale, radius: base.radius * scale }; card.x = base.x + (base.width - card.width) / 2 + (state.cardPositionMode === "custom" ? state.cardX : 0); card.y = base.y + (base.height - card.height) / 2 + (state.cardPositionMode === "custom" ? state.cardY : 0); const size = 210 * scale; const logoBox = { x: card.x + (card.width - size) / 2, y: card.y + 92 * scale + state.logoOpticalOffsetY, width: size, height: size }; return { card, logoBox }; }
   const auto = computeSystemAutoLayout();
   const baseWidth = 1556, scale = clamp(state.cardScale || 100, 86, 108) / 100;
-  const height = (state.cardHeightMode === "fixed" ? state.cardHeight : auto.height) * scale;
+  const height = state.cardHeight * scale;
   const width = baseWidth * scale;
   const card = {
     x: (state.width - width) / 2 + (state.cardPositionMode === "custom" ? state.cardX : 0),
     y: (state.height - height) / 2 + (state.cardPositionMode === "custom" ? state.cardY : 0),
     width, height,
-    radius: (state.cardHeightMode === "fixed" ? 92 : auto.radius) * scale
+    radius: 92 * scale
   };
   // Logo column: fixed 320px column, content area independently centred on the card.
   const columnWidth = 320 * scale;
