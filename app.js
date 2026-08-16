@@ -56,10 +56,10 @@ const SMART_THRESHOLDS = {
 };
 const AUTO_LAYOUT = {
   system: {
-    0: { height: 510, radius: 84, subtitleTitleVisualGap: 24, titleDividerVisualGap: 0, dividerDescriptionVisualGap: 0, descriptionLineBaselineGap: 54, descFontSize: 34, descOpacity: .80, dividerWidth: 0, logoOffset: 0, textOffset: 0, logoTarget: 236, logoContainerSize: 300 },
+    0: { height: 510, radius: 84, subtitleTitleVisualGap: 24, titleDividerVisualGap: 0, dividerDescriptionVisualGap: 0, descriptionLineBaselineGap: 54, descFontSize: 34, descOpacity: .80, dividerWidth: 0, logoOffset: 0, textOffset: 0, logoTarget: 246, logoContainerSize: 312 },
     1: { height: 570, radius: 84, subtitleTitleVisualGap: 24, titleDividerVisualGap: 48, dividerDescriptionVisualGap: 44, descriptionLineBaselineGap: 54, descFontSize: 34, descOpacity: .80, dividerWidth: 260, logoOffset: 0, textOffset: 8, logoTarget: 246, logoContainerSize: 312 },
-    2: { height: 630, radius: 88, subtitleTitleVisualGap: 24, titleDividerVisualGap: 54, dividerDescriptionVisualGap: 50, descriptionLineBaselineGap: 54, descFontSize: 32, descOpacity: .76, dividerWidth: 300, logoOffset: 0, textOffset: 4, logoTarget: 270, logoContainerSize: 340 },
-    3: { height: 700, radius: 92, subtitleTitleVisualGap: 24, titleDividerVisualGap: 60, dividerDescriptionVisualGap: 56, descriptionLineBaselineGap: 54, descFontSize: 32, descOpacity: .76, dividerWidth: 320, logoOffset: 0, textOffset: 0, logoTarget: 290, logoContainerSize: 368 }
+    2: { height: 630, radius: 88, subtitleTitleVisualGap: 24, titleDividerVisualGap: 54, dividerDescriptionVisualGap: 50, descriptionLineBaselineGap: 54, descFontSize: 32, descOpacity: .76, dividerWidth: 300, logoOffset: 0, textOffset: 4, logoTarget: 246, logoContainerSize: 312 },
+    3: { height: 700, radius: 92, subtitleTitleVisualGap: 24, titleDividerVisualGap: 60, dividerDescriptionVisualGap: 56, descriptionLineBaselineGap: 54, descFontSize: 32, descOpacity: .76, dividerWidth: 320, logoOffset: 0, textOffset: 0, logoTarget: 246, logoContainerSize: 312 }
   }
 };
 
