@@ -783,9 +783,10 @@ function dragAsset(asset, start, point, original) {
     let renderWidth, renderHeight;
     if (bgAspect > areaAspect) { renderHeight = area.height * (scale / 100); renderWidth = renderHeight * bgAspect; }
     else { renderWidth = area.width * (scale / 100); renderHeight = renderWidth / bgAspect; }
-    const maxX = Math.max(.001, (renderWidth - area.width) / 2), maxY = Math.max(.001, (renderHeight - area.height) / 2);
-    state.backgroundX = clamp(original.x + dx / maxX * 100, -100, 100);
-    state.backgroundY = clamp(original.y + dy / maxY * 100, -100, 100);
+    const maxX = Math.max(1, (renderWidth - area.width) / 2), maxY = Math.max(1, (renderHeight - area.height) / 2);
+    const dxPercent = dx / (maxX * 2) * 100, dyPercent = dy / (maxY * 2) * 100;
+    state.backgroundX = clamp(original.x + dxPercent, -100, 100);
+    state.backgroundY = clamp(original.y + dyPercent, -100, 100);
     syncRange("backgroundX"); syncRange("backgroundY"); invalidateSmartCache(); scheduleRender(); return;
   }
   const scale = state[`${asset}Scale`], den = Math.max(.01, (scale / 100 - 1));
