@@ -82,7 +82,7 @@ const DEFAULTS = {
   layoutPreset: "system", smartSummary: "", smartConfidence: "low", smartDiagnostics: null,
   smartSecondaryTintColor: "", smartSecondaryTintOpacity: 0, smartReflectionColor: "", smartReflectionOpacity: 0,
   titleShadowOpacity: .04, descShadowOpacity: .04,
-  cardHeightMode: "auto", dividerMode: "auto", cardPositionMode: "auto", layoutDensityMode: "auto",
+  cardHeightMode: "fixed", dividerMode: "auto", cardPositionMode: "auto", layoutDensityMode: "auto",
   cardX: 0, cardY: 0, cardScale: 100, cardHeight: 570,
   subtitleTitleVisualGap: 24, titleDividerVisualGap: 48, dividerDescriptionVisualGap: 44, descriptionLineBaselineGap: 54,
   textOpticalOffsetY: 8,
