@@ -91,7 +91,7 @@ const DEFAULTS = {
 };
 const RANGE_GROUPS = {
   background: ["backgroundScale", "backgroundX", "backgroundY", "backgroundOpacity"],
-  logo: ["logoScale", "logoX", "logoY", "logoOpticalOffsetY", "logoContainerSize"],
+  logo: [],
   glass: ["glassDepth", "cardOpacity", "glassDispersion", "glassSaturation", "glassContrast", "glassTintOpacity"],
   type: ["titleLetterSpacing", "descLetterSpacing", "descCharsPerLine"]
 };
@@ -161,7 +161,6 @@ function normalizeState() {
   if (!Number.isFinite(Number(state.cardX))) state.cardX = DEFAULTS.cardX;
   if (!Number.isFinite(Number(state.cardY))) state.cardY = DEFAULTS.cardY;
   if (!Number.isFinite(Number(state.cardScale))) state.cardScale = DEFAULTS.cardScale;
-  if (!Number.isFinite(Number(state.logoOpticalOffsetY))) state.logoOpticalOffsetY = DEFAULTS.logoOpticalOffsetY;
   if (!Number.isFinite(Number(state.glassSaturation))) state.glassSaturation = MATERIAL_PRESETS[state.materialBase]?.saturation || DEFAULTS.glassSaturation;
   if (!Number.isFinite(Number(state.glassContrast))) state.glassContrast = MATERIAL_PRESETS[state.materialBase]?.contrast || DEFAULTS.glassContrast;
   if (!state.glassTintColor) state.glassTintColor = MATERIAL_PRESETS[state.materialBase]?.tintColor || DEFAULTS.glassTintColor;
@@ -199,9 +198,6 @@ function normalizeState() {
   if (!state.cardPositionMode) state.cardPositionMode = "auto";
   if (!state.layoutDensityMode) state.layoutDensityMode = "auto";
   if (!["auto", "original", "custom"].includes(state.logoCropMode)) state.logoCropMode = "auto";
-  if (!Number.isFinite(Number(state.logoScale))) state.logoScale = DEFAULTS.logoScale;
-  state.logoScale = clamp(Number(state.logoScale), 40, 600);
-  if (!Number.isFinite(Number(state.logoContainerSize))) state.logoContainerSize = DEFAULTS.logoContainerSize;
   ["subtitleTitleVisualGap", "titleDividerVisualGap", "dividerDescriptionVisualGap", "descriptionLineBaselineGap", "textOpticalOffsetY"].forEach(k => { if (!Number.isFinite(Number(state[k]))) state[k] = DEFAULTS[k]; });
   if (state.logoCropBounds && typeof state.logoCropBounds !== "object") state.logoCropBounds = null;
   if (state.fontFamily && (!state.titleFontFamily || !state.bodyFontFamily)) { state.titleFontFamily = state.fontFamily; state.bodyFontFamily = state.fontFamily; }
@@ -240,7 +236,6 @@ function migrateLayoutState(saved) {
   ["subtitleTitleGap", "titleRuleGap", "ruleDescGap", "descLineGap", "subtitleY"].forEach(k => { delete state[k]; });
   // Preserve the previous visual logo size: legacy scale was relative to the raw
   // PNG canvas, so keep the number and do NOT re-fit to the new crop.
-  if (Number.isFinite(Number(saved.logoScale))) state.logoScale = clamp(Number(saved.logoScale), 40, 600);
   if (!saved.logoCropMode) state.logoCropMode = "auto";
   if (saved.cardPositionMode !== "custom") { state.cardX = 0; state.cardY = 0; }
   state.layoutStateVersion = LAYOUT_STATE_VERSION;
@@ -625,7 +620,6 @@ function activeLogoCrop() {
 async function refreshLogoCropBounds({ recomputeScale = false } = {}) {
   if (!state.logo) { state.logoCropBounds = null; return; }
   state.logoCropBounds = await computeLogoCropBounds(state.logo);
-  if (recomputeScale) state.logoScale = DEFAULTS.logoScale;
 }
 /* Geometry of the visible (effective) logo content, honouring the crop.
    The placement rect is expanded so the CROPPED content — not the raw PNG —
@@ -635,15 +629,15 @@ function logoContentGeometry(logoBox) {
   // Self-heal: if bounds/aspect are missing (e.g. restored from an older cache),
   // schedule a recompute so the badge never stays at a wrong 1:1 ratio.
   if (state.logo && !state.logoCropBounds && !logoCropPending) { logoCropPending = true; refreshLogoCropBounds().then(() => { logoCropPending = false; scheduleRender(); }).catch(() => { logoCropPending = false; }); }
-  const scale = clamp(Number(state.logoScale) || 100, 40, 600) / 100;
+  const scale = 160 / 100;
   const targetBase = Math.min(logoBox.width, logoBox.height);
   const aspect = logoNaturalAspect();
   // Effective content box before user scaling: fit inside the logo box.
   let contentW = targetBase, contentH = targetBase;
   if (aspect > 1) contentH = targetBase / aspect; else if (aspect < 1) contentW = targetBase * aspect;
   contentW *= scale; contentH *= scale;
-  const centerX = logoBox.x + logoBox.width / 2 + (Number(state.logoX) || 0) / 100 * LOGO_OFFSET_RANGE.x;
-  const centerY = logoBox.y + logoBox.height / 2 + (Number(state.logoY) || 0) / 100 * LOGO_OFFSET_RANGE.y;
+  const centerX = logoBox.x + logoBox.width / 2 + (-8) / 100 * LOGO_OFFSET_RANGE.x;
+  const centerY = logoBox.y + logoBox.height / 2 + (0) / 100 * LOGO_OFFSET_RANGE.y;
   // Expand the drawn image so that only the crop region covers the content box.
   const drawW = contentW / crop.cropWidth, drawH = contentH / crop.cropHeight;
   const image = { x: centerX - contentW / 2 - crop.cropX * drawW, y: centerY - contentH / 2 - crop.cropY * drawH, width: drawW, height: drawH };
@@ -736,7 +730,7 @@ function estimateDescriptionLineCount(width = state.descriptionBoxWidth, size = 
 function computeSystemAutoLayout() { const lineCount = estimateDescriptionLineCount(860, 32, 400, state.descLetterSpacing, fontStackForRole("description")); const base = AUTO_LAYOUT.system[Math.max(0, Math.min(3, lineCount))] || AUTO_LAYOUT.system[3]; return { ...base, lineCount }; }
 function shouldShowDivider(lineCount) { if (state.dividerMode === "show") return true; if (state.dividerMode === "hide") return false; return lineCount > 0; }
 function layoutGeometry() {
-  if (state.layoutPreset === "certificate") { const base = { x: 226, y: 245, width: 1480, height: 870, radius: 84 }; const scale = clamp(state.cardScale || 100, 86, 108) / 100; const card = { width: base.width * scale, height: base.height * scale, radius: base.radius * scale }; card.x = base.x + (base.width - card.width) / 2 + (state.cardPositionMode === "custom" ? state.cardX : 0); card.y = base.y + (base.height - card.height) / 2 + (state.cardPositionMode === "custom" ? state.cardY : 0); const size = 210 * scale; const logoBox = { x: card.x + (card.width - size) / 2, y: card.y + 92 * scale + state.logoOpticalOffsetY, width: size, height: size }; return { card, logoBox }; }
+  if (state.layoutPreset === "certificate") { const base = { x: 226, y: 245, width: 1480, height: 870, radius: 84 }; const scale = clamp(state.cardScale || 100, 86, 108) / 100; const card = { width: base.width * scale, height: base.height * scale, radius: base.radius * scale }; card.x = base.x + (base.width - card.width) / 2 + (state.cardPositionMode === "custom" ? state.cardX : 0); card.y = base.y + (base.height - card.height) / 2 + (state.cardPositionMode === "custom" ? state.cardY : 0); const size = 210 * scale; const logoBox = { x: card.x + (card.width - size) / 2, y: card.y + 92 * scale, width: size, height: size }; return { card, logoBox }; }
   const auto = computeSystemAutoLayout();
   const baseWidth = 1556, scale = clamp(state.cardScale || 100, 86, 108) / 100;
   const height = state.cardHeight * scale;
@@ -749,9 +743,9 @@ function layoutGeometry() {
   };
   // Logo column: fixed 320px column, content area independently centred on the card.
   const columnWidth = 320 * scale;
-  const boxSize = (state.logoStyle === "glass" ? clamp(Number(state.logoContainerSize) || auto.logoContainerSize, 220, 460) : auto.logoTarget) * scale;
+  const boxSize = (state.logoStyle === "glass" ? 312 : auto.logoTarget) * scale;
   const logoBox = { x: card.x + 118 * scale + (columnWidth - boxSize) / 2, width: boxSize, height: boxSize };
-  logoBox.y = card.y + (card.height - boxSize) / 2 + (Number(state.logoOpticalOffsetY) || 0);
+  logoBox.y = card.y + (card.height - boxSize) / 2;
   logoBox.columnX = card.x + 118 * scale;
   logoBox.columnWidth = columnWidth;
   return { card, logoBox };
@@ -783,7 +777,7 @@ function updateAssetCards() { const pairs=[ ["background","backgroundThumb","bac
 function validateImage(file) { if (!file) return ""; if (!file.type.startsWith("image/")) return "请选择图片文件。"; if (file.size > MAX_FILE_SIZE) return "图片超过 20MB，请压缩后重试。"; return ""; }
 async function decodeImageBlob(blob) { if (window.createImageBitmap) { try { return await createImageBitmap(blob, { imageOrientation: "from-image" }); } catch (_) {} } const url = URL.createObjectURL(blob); try { const img = new Image(); img.decoding = "async"; img.src = url; await img.decode(); return img; } finally { setTimeout(() => URL.revokeObjectURL(url), 5000); } }
 async function downsampleImage(file, kind) { const decoded = await decodeImageBlob(file); const sourceWidth = decoded.width, sourceHeight = decoded.height; const edge = Math.max(sourceWidth, sourceHeight); const ratio = Math.min(1, MAX_WORK_IMAGE_EDGE / edge); const targetWidth = Math.max(1, Math.round(sourceWidth * ratio)); const targetHeight = Math.max(1, Math.round(sourceHeight * ratio)); const canvas = document.createElement("canvas"), ctx = canvas.getContext("2d"); canvas.width = targetWidth; canvas.height = targetHeight; if (!ctx) throw new Error("浏览器无法处理图片画布"); ctx.drawImage(decoded, 0, 0, targetWidth, targetHeight); if (decoded.close) decoded.close(); const type = file.type === "image/png" && kind === "logo" ? "image/png" : "image/jpeg"; const quality = type === "image/jpeg" ? .92 : undefined; const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error("图片转换失败")), type, quality)); canvas.width = canvas.height = 0; return await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = reject; r.readAsDataURL(blob); }); }
-async function readAsset(file, kind) { const error=$(kind==="background"?"backgroundError":"logoError"), msg=validateImage(file); if (error) error.textContent=msg; if(msg)return; try { const decoded = await decodeImageBlob(file); const bgAspect = decoded.width / decoded.height; const url=await downsampleImage(file, kind); beginInteraction(); state.editorTarget=kind; state[kind]=url; if(kind==="background"){state.backgroundAspect=bgAspect;extractThemeColors(url);state.backgroundScale=100;state.backgroundX=0;state.backgroundY=0;invalidateSmartCache();} else {state.logoScale=DEFAULTS.logoScale;state.logoX=0;state.logoY=0;logoCropCache=null;logoAspectCache={src:"",aspect:1};await refreshLogoAspect();await refreshLogoCropBounds();} syncUi(); scheduleRender(); endInteraction(); } catch (_) { const heic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name); if (error) error.textContent = heic ? "当前浏览器无法读取该照片格式，请在照片中导出为 JPEG/PNG 后重试。" : "图片无法解码，请更换一个有效文件。"; } }
+async function readAsset(file, kind) { const error=$(kind==="background"?"backgroundError":"logoError"), msg=validateImage(file); if (error) error.textContent=msg; if(msg)return; try { const decoded = await decodeImageBlob(file); const bgAspect = decoded.width / decoded.height; const url=await downsampleImage(file, kind); beginInteraction(); state.editorTarget=kind; state[kind]=url; if(kind==="background"){state.backgroundAspect=bgAspect;extractThemeColors(url);state.backgroundScale=100;state.backgroundX=0;state.backgroundY=0;invalidateSmartCache();} else {logoCropCache=null;logoAspectCache={src:"",aspect:1};await refreshLogoAspect();await refreshLogoCropBounds();} syncUi(); scheduleRender(); endInteraction(); } catch (_) { const heic = /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name); if (error) error.textContent = heic ? "当前浏览器无法读取该照片格式，请在照片中导出为 JPEG/PNG 后重试。" : "图片无法解码，请更换一个有效文件。"; } }
 function setupUpload(kind) { const card=$(kind==="background"?"backgroundUploadCard":"logoUploadCard"), input=$(kind==="background"?"backgroundInput":"logoInput"), replace=$(kind==="background"?"replaceBackground":"replaceLogo"), clear=$(kind==="background"?"clearBackground":"clearLogo"); const trigger=()=>{state.editorTarget=kind; input.click();}; card.addEventListener("click",trigger); card.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trigger();}}); replace.addEventListener("click",trigger); input.addEventListener("change",e=>readAsset(e.target.files[0],kind)); ["dragenter","dragover"].forEach(t=>card.addEventListener(t,e=>{e.preventDefault();state.editorTarget=kind;card.classList.add("drag-over");})); ["dragleave","drop"].forEach(t=>card.addEventListener(t,e=>{e.preventDefault();card.classList.remove("drag-over");})); card.addEventListener("drop",e=>readAsset(e.dataTransfer.files[0],kind)); clear.addEventListener("click",()=>{beginInteraction();state.editorTarget=kind;state[kind]="";if(kind==="background"){state.themes=[];state.selectedTheme=-1;invalidateSmartCache();}input.value="";syncUi();scheduleRender();endInteraction();}); }
 async function registerCustomFont(show = true) { if (!state.customFontData || !state.customFontName) return; if (!window.FontFace || !document.fonts) { showToast("当前浏览器不支持可靠加载自定义字体。", "error", true); return; } const face=new FontFace(state.customFontName,`url(${state.customFontData})`); try { await face.load(); document.fonts.add(face); await document.fonts.ready; if(show)showToast("自定义字体已加载"); } catch (_) { if ($("fontStatus")) $("fontStatus").textContent="字体加载失败"; showToast("字体加载失败，无法可靠导出。","error",true); } }
 function setupFontUpload() { $("fontInput").addEventListener("change", async e=>{const file=e.target.files[0];if(!file)return; if(file.size>MAX_FILE_SIZE){$("fontStatus").textContent="字体超过 20MB";return;} const ext=(file.name.split(".").pop()||"ttf").toLowerCase(); const fmt={ttf:"truetype",otf:"opentype",woff:"woff",woff2:"woff2"}[ext]; if(!fmt){$("fontStatus").textContent="不支持该字体格式";return;} const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(file);}); beginInteraction();state.customFontName=`UserFont${Date.now()}`;state.customFontData=data;state.customFontFormat=fmt;state.customFontFileName=file.name;state.customFontScope=state.customFontScope||"title";await registerCustomFont();syncUi();scheduleRender();endInteraction();}); }
@@ -796,13 +790,6 @@ function assetArea(asset) { if (asset === "logo") return layoutGeometry().logoBo
 function dragAsset(asset, start, point, original) {
   const dx = point.x - start.x, dy = point.y - start.y;
   if (asset === "card") { state.cardPositionMode = "custom"; state.cardX = clamp(original.x + dx, -160, 160); state.cardY = clamp(original.y + dy, -120, 120); syncRange("cardX"); syncRange("cardY"); scheduleRender(); return; }
-  if (asset === "logo") {
-    // Logo offsets are percentages of a fixed pixel range around the content
-    // centre, so dragging stays linear no matter how large logoScale gets.
-    state.logoX = clamp(original.x + dx / LOGO_OFFSET_RANGE.x * 100, -100, 100);
-    state.logoY = clamp(original.y + dy / LOGO_OFFSET_RANGE.y * 100, -100, 100);
-    syncRange("logoX"); syncRange("logoY"); scheduleRender(); return;
-  }
   if (asset === "background") {
     const scale = state.backgroundScale, area = assetArea(asset);
     const bgAspect = state.backgroundAspect || (area.width / area.height);
@@ -823,22 +810,6 @@ function dragAsset(asset, start, point, original) {
 }
 function scaleAround(asset, center, oldScale, newScale, oldX, oldY) {
   if (asset === "card") { state.cardPositionMode = "custom"; state.cardScale = newScale; state.cardX = oldX; state.cardY = oldY; ["cardScale","cardX","cardY"].forEach(syncRange); scheduleRender(); return; }
-  if (asset === "logo") {
-    // Scale about the effective content centre; keep the pinch focus anchored so
-    // the badge neither jumps nor distorts while zooming.
-    const { logoBox } = layoutGeometry();
-    const prevScale = oldScale;
-    state.logoScale = clamp(newScale, 40, 600);
-    const baseCenterX = logoBox.x + logoBox.width / 2, baseCenterY = logoBox.y + logoBox.height / 2;
-    const prevCenterX = baseCenterX + oldX / 100 * LOGO_OFFSET_RANGE.x, prevCenterY = baseCenterY + oldY / 100 * LOGO_OFFSET_RANGE.y;
-    const factor = state.logoScale / Math.max(1, prevScale);
-    const nextCenterX = center.x - (center.x - prevCenterX) * factor;
-    const nextCenterY = center.y - (center.y - prevCenterY) * factor;
-    state.logoX = clamp((nextCenterX - baseCenterX) / LOGO_OFFSET_RANGE.x * 100, -100, 100);
-    state.logoY = clamp((nextCenterY - baseCenterY) / LOGO_OFFSET_RANGE.y * 100, -100, 100);
-    ["Scale","X","Y"].forEach(k => syncRange(`logo${k}`));
-    scheduleRender(); return;
-  }
   const area = assetArea(asset); const oldP = getImagePlacement(area, oldScale, oldX, oldY);
   const relX = (center.x - oldP.x) / oldP.width, relY = (center.y - oldP.y) / oldP.height;
   const bgAspect = asset === "background" ? (state.backgroundAspect || (area.width / area.height)) : (area.width / area.height);
@@ -869,26 +840,12 @@ function assetQuickActions() {
       if (action === "auto") applySmartLayoutForContent();
       if (action === "fixed") { state.cardHeightMode = "fixed"; state.cardHeight = layoutGeometry().card.height; }
       if (action === "text-center") { state.textOpticalOffsetY = 0; syncRange("textOpticalOffsetY"); }
-      if (action === "logo-center") { state.logoX = 0; state.logoY = 0; state.logoOpticalOffsetY = 0; ["logoX", "logoY", "logoOpticalOffsetY"].forEach(syncRange); }
       syncUi(); scheduleRender(); endInteraction(); return;
     }
     if (asset === "logo") {
       state.editorTarget = "logo";
-      const { card, logoBox } = layoutGeometry();
-      // Scale is expressed against the alpha-cropped content, so 100% == "fit".
-      if (action === "fit") state.logoScale = 100;
-      if (action === "fill") state.logoScale = 130;
-      if (action === "emphasize") {
-        // Target ~51% of card height for the effective badge content.
-        const geo = logoContentGeometry(logoBox);
-        const currentH = geo.content.height || 1;
-        const desired = card.height * .51;
-        state.logoScale = clamp(state.logoScale * (desired / currentH), 40, 600);
-      }
-      if (action === "original") { state.logoCropMode = "auto"; await refreshLogoCropBounds(); state.logoScale = 100; }
-      if (action === "center") { state.logoX = 0; state.logoY = 0; state.logoOpticalOffsetY = 0; syncRange("logoOpticalOffsetY"); }
-      if (action === "reset") { ["Scale", "X", "Y"].forEach(k => state[`logo${k}`] = DEFAULTS[`logo${k}`]); state.logoOpticalOffsetY = 0; state.logoCropMode = "auto"; await refreshLogoCropBounds(); }
-      ["Scale", "X", "Y"].forEach(k => syncRange(`logo${k}`));
+      if (action === "original") { state.logoCropMode = "auto"; await refreshLogoCropBounds(); }
+      if (action === "reset") { state.logoCropMode = "auto"; await refreshLogoCropBounds(); }
       syncUi(); scheduleRender(); endInteraction(); return;
     }
     state.editorTarget = asset;
@@ -1048,18 +1005,15 @@ function deriveSubtitleColor(logoAnalysis,region,material){const warm=logoAnalys
 function computeAutoTextColorPlan(finalAnalysis,logoAnalysis) { const candidates=generateTextColorCandidates(logoAnalysis),pastelMaterial=normalizeHex(state.glassTintColor)==="#2B2932"&&Math.abs(state.glassSaturation-.70)<.08; let title=bestRoleCandidate(candidates,finalAnalysis.title,"title",logoAnalysis),body=bestRoleCandidate({light:["#E7E0E3","#ECE5E8",...candidates.light],dark:candidates.dark},finalAnalysis.body||finalAnalysis.title,"body",logoAnalysis),subtitle=deriveSubtitleColor(logoAnalysis,finalAnalysis.subtitle||finalAnalysis.title,currentMaterialToken()); if(pastelMaterial){const titleHex="#F3EEF0",bodyHex="#E7E0E3",subtitleHex="#F2A0B5";title={...title,hex:titleHex,opacity:94,family:"light",contrast:contrastMetrics(titleHex,94,finalAnalysis.title)};body={...body,hex:bodyHex,opacity:84,family:"light",contrast:contrastMetrics(bodyHex,84,finalAnalysis.body||finalAnalysis.title)};subtitle={...subtitle,hex:subtitleHex,opacity:94,contrast:contrastMetrics(subtitleHex,94,finalAnalysis.subtitle||finalAnalysis.title),source:"Logo 粉色暖强调"};}return {summaryFamily:title.family,title:{color:title.hex,opacity:title.opacity,contrast:title.contrast,source:title.family==="light"?"最终玻璃上的柔和冷粉白":"最终玻璃上的深色标题",shadow:title.family==="light"?.08:.02},body:{color:body.hex,opacity:body.opacity,contrast:body.contrast,source:body.family==="light"?"最终玻璃上的中性浅灰粉白":"最终玻璃上的深色正文",shadow:body.family==="light"?.08:.02},subtitle:{color:subtitle.hex,opacity:subtitle.opacity,contrast:subtitle.contrast,source:subtitle.source}}; }
 async function applySmartTextColors({resetOpacity=false,finalAnalysis=null,logoAnalysis=null}={}) { const analysis=finalAnalysis||await renderSmartAnalysisCanvas(), logo=logoAnalysis||await analyzeLogoColors(currentMaterialBase(),analysis.subtitle||analysis.title),plan=computeAutoTextColorPlan(analysis,logo); if(state.titleColorMode!=="manual"){state.titleColor=plan.title.color;state.titleColorMode="auto";state.titleColorSource=plan.title.source;}if(state.bodyTextColorMode!=="manual"){state.bodyTextColor=plan.body.color;state.bodyTextColorMode="auto";state.bodyTextColorSource=plan.body.source;}if(state.subtitleColorMode!=="manual"){state.subtitleColor=plan.subtitle.color;state.subtitleColorMode="auto";state.subtitleColorSource=plan.subtitle.source;}if(resetOpacity||!state.titleOpacityManuallyEdited)state.titleOpacity=plan.title.opacity;if(resetOpacity||!state.bodyTextOpacityManuallyEdited)state.bodyTextOpacity=plan.body.opacity;if(resetOpacity||!state.subtitleOpacityManuallyEdited)state.subtitleOpacity=plan.subtitle.opacity;state.titleContrast=plan.title.contrast.score;state.bodyTextContrast=plan.body.contrast.score;state.subtitleContrast=plan.subtitle.contrast.score;state.titleShadowOpacity=plan.title.shadow;state.descShadowOpacity=plan.body.shadow;syncLegacyTextColor();return{plan,analysis,logoAnalysis:logo}; }
 function applySmartLayoutForContent() {
-  state.cardHeightMode = "auto"; state.layoutDensityMode = "auto";
+  state.layoutDensityMode = "auto";
   state.dividerMode = state.dividerMode || "auto";
   const metrics = computeSystemAutoLayout();
-  state.cardHeight = metrics.height;
   state.subtitleTitleVisualGap = metrics.subtitleTitleVisualGap;
   state.titleDividerVisualGap = metrics.titleDividerVisualGap;
   state.dividerDescriptionVisualGap = metrics.dividerDescriptionVisualGap;
   state.descriptionLineBaselineGap = metrics.descriptionLineBaselineGap;
   state.dividerWidth = metrics.dividerWidth;
   state.textOpticalOffsetY = metrics.textOffset;
-  state.logoOpticalOffsetY = metrics.logoOffset;
-  state.logoContainerSize = metrics.logoContainerSize;
   state.cardX = 0; state.cardY = 0; state.cardPositionMode = "auto";
 }
 /* Human-readable accent name derived from the measured hue, never from a filename. */
