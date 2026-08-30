@@ -491,7 +491,7 @@ function layoutSystemTypography({ card, logoBox, subtitle, title, descriptionLin
 
   // 两行正文时略微上调整体文字位置
   const descLineCount = hasDescription ? descLines.length : 0;
-  const twoLineOffset = descLineCount === 2 ? -12 : 0;
+  const twoLineOffset = descLineCount === 2 ? -12 : descLineCount === 3 ? -24 : 0;
 
   // Walk baselines out from the measured top.
   const positions = {};
@@ -541,7 +541,7 @@ function systemTextPlan(card, logoBox, typography) {
   const descWidth = Math.min(state.descriptionBoxWidth, columnWidth);
   const lineCountEstimate = estimateDescriptionLineCount(descWidth, descToken.fontSize, descToken.fontWeight, descToken.letterSpacing, descFamily);
   const showDivider = shouldShowDivider(lineCountEstimate);
-  const maxLines = String(state.description || "").trim() ? Math.min(2, lineCountEstimate) : 0;
+  const maxLines = String(state.description || "").trim() ? Math.min(3, lineCountEstimate) : 0;
   const desc = maxLines ? descriptionLines(maxLines, descWidth, descToken.fontSize, descToken.fontWeight, descToken.letterSpacing, descFamily) : { lines: [], overflow: false };
   const layout = layoutSystemTypography({
     card, logoBox,
