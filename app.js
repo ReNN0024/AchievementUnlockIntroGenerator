@@ -346,7 +346,7 @@ function balanceLines(lines, maxWidth, size, weight, spacing, family) {
 }
 function descriptionLines(maxLines, maxWidth, size, weight, spacing, family) {
   const charsPerLine = Math.min(24, Math.max(10, Number(state.descCharsPerLine) || 20));
-  const maxLinesLimit = 2;
+  const maxLinesLimit = 3;
   const lines = [];
   for (const manual of String(state.description || "").split(/\r?\n/)) {
     if (manual.length <= charsPerLine) {
